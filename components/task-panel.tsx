@@ -42,10 +42,10 @@ export function TaskPanel() {
   }, [tasks, filters])
 
   return (
-    <aside className="h-fit rounded-2xl border border-white/10 bg-black p-4">
+    <aside className="h-fit rounded-2xl border border-red-100 bg-white p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{'All Tasks'}</h2>
-        <div className="text-xs text-white/60">
+        <h2 className="text-lg font-semibold text-red-900">All Tasks</h2>
+        <div className="text-xs text-red-900/70">
           {visible.length} / {tasks.length} visible
         </div>
       </div>
@@ -78,7 +78,7 @@ export function TaskPanel() {
           <li
             key={t.id}
             className={cn(
-              "group rounded-xl border border-white/10 bg-black p-3 transition hover:bg-white/5",
+              "group rounded-xl border border-red-100 bg-white p-3 transition hover:bg-red-50",
               t.status === "done" && "opacity-70"
             )}
           >
@@ -91,17 +91,19 @@ export function TaskPanel() {
               <div className="flex-1">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <h4 className={cn("font-medium text-white", t.status === "done" && "line-through opacity-70")}>
+                    <h4 className={cn("font-medium text-red-900", t.status === "done" && "line-through opacity-70")}>
                       {t.title}
                     </h4>
-                    {t.notes && <p className="mt-0.5 line-clamp-2 text-sm text-white/70">{t.notes}</p>}
+                    {t.notes && <p className="mt-0.5 line-clamp-2 text-sm text-red-900/70">{t.notes}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/90">{t.difficulty}</span>
+                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs text-red-800">
+                      {t.difficulty}
+                    </span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-white/80 hover:text-white"
+                      className="text-red-600 hover:text-red-700"
                       onClick={() => deleteTask(t.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -109,7 +111,7 @@ export function TaskPanel() {
                   </div>
                 </div>
 
-                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-white/70">
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-red-900/70">
                   {t.dueDate && (
                     <span className="inline-flex items-center gap-1">
                       <CalendarDays className="h-3.5 w-3.5" />
@@ -125,7 +127,7 @@ export function TaskPanel() {
                     {`List: ${getListName(t.listId)}`}
                   </span>
                   {t.tags.slice(0, 3).map((tg) => (
-                    <Badge key={tg} variant="secondary" className="bg-white/10 text-white/80">
+                    <Badge key={tg} variant="secondary" className="bg-red-50 text-red-800">
                       {tg}
                     </Badge>
                   ))}
@@ -137,7 +139,7 @@ export function TaskPanel() {
       </ul>
 
       <div className="mt-4">
-        <h3 className="mb-2 text-xs uppercase tracking-wide text-white/60">{'Lists'}</h3>
+        <h3 className="mb-2 text-xs uppercase tracking-wide text-red-900/70">Lists</h3>
         <div className="flex flex-wrap gap-2">
           <FilterChip
             icon={<ListPlus className="h-3.5 w-3.5" />}
@@ -146,12 +148,7 @@ export function TaskPanel() {
             onClick={() => setFilters({ ...filters, listId: undefined })}
           />
           {lists.map((l) => (
-            <FilterChip
-              key={l.id}
-              label={l.name}
-              active={filters.listId === l.id}
-              onClick={() => setFilters({ ...filters, listId: l.id })}
-            />
+            <FilterChip key={l.id} label={l.name} active={filters.listId === l.id} onClick={() => setFilters({ ...filters, listId: l.id })} />
           ))}
         </div>
       </div>
@@ -175,9 +172,7 @@ function FilterChip({
       onClick={onClick}
       className={cn(
         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs",
-        active
-          ? "border-white/30 bg-white/10 text-white"
-          : "border-white/10 bg-black text-white/80 hover:bg-white/5"
+        active ? "border-red-300 bg-red-50 text-red-900" : "border-red-100 bg-white text-red-900/80 hover:bg-red-50"
       )}
     >
       {icon}

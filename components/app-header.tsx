@@ -1,7 +1,6 @@
 "use client"
 
 import { ClipboardCheck, LogOut } from 'lucide-react'
-import { ApiKeySettings } from "./api-key-settings"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -34,26 +33,32 @@ export function AppHeader() {
   }
 
   return (
-    <header className="mx-auto max-w-5xl px-4 pb-6 pt-8 text-white">
+    <header className="sticky top-0 z-20 mx-auto mb-4 w-full max-w-5xl bg-white/90 px-4 pb-4 pt-6 backdrop-blur supports-[backdrop-filter]:bg-white/70">
       <div className="flex items-end justify-between">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-white/10 p-2">
-            <ClipboardCheck className="h-6 w-6 text-white/80" />
+          <div className="rounded-xl border border-red-200 bg-red-50 p-2">
+            <ClipboardCheck className="h-6 w-6 text-red-700" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{"SmartTask Chat"}</h1>
-            {/* Removed tagline and status pill */}
+            <h1 className="text-2xl font-semibold tracking-tight text-red-900">SmartTask Chat</h1>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <ApiKeySettings />
           {email ? (
-            <Button onClick={signOut} variant="outline" className="border-white/20 bg-black text-white hover:bg-white/5">
+            <Button
+              onClick={signOut}
+              variant="outline"
+              className="border-red-600 bg-white text-red-700 hover:bg-red-50"
+            >
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
           ) : (
-            <Button onClick={() => router.push("/login")} variant="outline" className="border-white/20 bg-black text-white hover:bg-white/5">
+            <Button
+              onClick={() => router.push("/login")}
+              variant="outline"
+              className="border-red-600 bg-white text-red-700 hover:bg-red-50"
+            >
               Sign in
             </Button>
           )}

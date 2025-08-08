@@ -11,16 +11,22 @@ import { AuthGate } from "@/components/auth-gate"
 export default function HomePage() {
   return (
     <TaskProvider>
-      <main className="min-h-screen bg-black text-white">
+      <main className="min-h-screen bg-gradient-to-b from-white to-red-50 text-red-900">
         <AppHeader />
         <div className="mx-auto max-w-5xl px-4 pb-16">
           <AuthGate allowGuest>
             <Tabs defaultValue="smart" className="w-full">
-              <TabsList className="mb-6 border border-white/10 bg-black">
-                <TabsTrigger value="smart" className="data-[state=active]:bg-white/10 data-[state=active]:text-white">
+              <TabsList className="mb-6 flex gap-2 rounded-xl border border-red-200 bg-white p-1">
+                <TabsTrigger
+                  value="smart"
+                  className="rounded-lg border border-transparent px-4 py-2 text-sm text-red-900 data-[state=active]:border-red-600 data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
                   Smart Tasks
                 </TabsTrigger>
-                <TabsTrigger value="all" className="data-[state=active]:bg-white/10 data-[state=active]:text-white">
+                <TabsTrigger
+                  value="all"
+                  className="rounded-lg border border-transparent px-4 py-2 text-sm text-red-900 data-[state=active]:border-red-600 data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                >
                   All Tasks
                 </TabsTrigger>
               </TabsList>

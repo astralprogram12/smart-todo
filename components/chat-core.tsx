@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useTasks } from "./task-context"
 import { parseActionsFromAssistant, parseRecommendationsFromAssistant } from "@/lib/commands"
-import { getLocalGeminiKey } from "./api-key-settings"
 
 type Msg = { id: string; role: "user" | "assistant"; text: string }
 
@@ -16,16 +15,14 @@ type Props = {
   showExtras?: boolean
 }
 
-// Remove fenced \`\`\`json ... \`\`\` blocks (but still parse them for actions)
+// Remove fenced ```json ... ``` blocks (still parsed elsewhere)
 function stripJsonBlocks(text: string) {
-  // Remove any fenced code blocks (json or otherwise)
   const withoutCode = text.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, "").replace(/\`\`\`[\s\S]*?\`\`\`/g, "")
   return withoutCode.trim()
 }
 
 export function ChatCore({ compact = false, height = 300, showExtras = false }: Props) {
   const { tasks, lists, filters, applyActions, setSmartResults } = useTasks()
-  const [apiKey, setApiKey] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aiAvailable, setAiAvailable] = useState<boolean | null>(null)
@@ -33,16 +30,7 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
   const [input, setInput] = useState("")
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
-  // Track local Gemini key
-  useEffect(() => {
-    const load = () => setApiKey(getLocalGeminiKey())
-    load()
-    const onUpdate = () => load()
-    window.addEventListener("gemini-key-updated", onUpdate as any)
-    return () => window.removeEventListener("gemini-key-updated", onUpdate as any)
-  }, [])
-
-  // Auto scroll
+  // Auto scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, isLoading])
@@ -68,13 +56,13 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
     [tasks, lists, filters]
   )
 
-  // Probe availability
+  // Probe availability once
   useEffect(() => {
     async function probe() {
       try {
         const res = await fetch("/api/agent", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...(apiKey ? { "x-gemini-key": apiKey } : {}) },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ history: [], taskContext }),
         })
         setAiAvailable(res.ok)
@@ -83,8 +71,7 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
       }
     }
     probe()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [apiKey])
+  }, []) // once
 
   async function submitMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -100,7 +87,7 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
     try {
       const res = await fetch("/api/agent", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...(apiKey ? { "x-gemini-key": apiKey } : {}) },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           history: newHistory.map((m) => ({ role: m.role, text: m.text })),
           taskContext,
@@ -143,22 +130,23 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
   }
 
   return (
-    <section className="relative rounded-2xl border border-white/10 bg-gradient-to-b from-neutral-950 to-black p-4 shadow-xl">
+    <section className="relative rounded-2xl border border-red-100 bg-gradient-to-b from-white to-red-50 p-4 shadow-xl">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">{'Assistant'}</h2>
-        <div className="text-xs text-white/60">
-          {aiAvailable === null ? "Checking AI..." : aiAvailable ? "Gemini AI On" : "Local mode"}
+        <h2 className="text-lg font-semibold text-red-900">Assistant</h2>
+        <div className="text-xs text-red-700/70">
+          {aiAvailable === null ? "Checking AI..." : aiAvailable ? "AI Ready" : "Local mode"}
         </div>
       </div>
 
       <div
         ref={scrollRef}
-        className="mb-3 w-full overflow-y-auto rounded-2xl border border-white/10 bg-black/60 p-3 backdrop-blur-sm"
+        className="mb-3 w-full overflow-y-auto rounded-2xl border border-red-100 bg-white p-3"
         style={{ height }}
       >
         {messages.length === 0 && (
-          <div className="text-sm text-white/60">
-            {'Try: '}<em>{"What can I complete today?"}</em>, {"Add task: Buy milk tomorrow"}, {"Show errands due this week"}
+          <div className="text-sm text-red-900/70">
+            {"Try: "}
+            <em>{"What can I complete today?"}</em>, {"Add task: Buy milk tomorrow"}, {"Show errands due this week"}
           </div>
         )}
         <div className="space-y-3">
@@ -168,34 +156,34 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
             return (
               <div key={m.id} className={`flex items-start gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
                 {!isUser && (
-                  <div className="mt-0.5 rounded-full bg-white/10 p-1">
-                    <Bot className="h-4 w-4 text-white/80" />
+                  <div className="mt-0.5 rounded-full bg-red-100 p-1">
+                    <Bot className="h-4 w-4 text-red-700" />
                   </div>
                 )}
                 <div
                   className={[
                     "max-w-[80%] whitespace-pre-wrap text-sm",
                     "rounded-2xl px-3 py-2",
-                    isUser ? "bg-white text-black shadow-sm" : "bg-white/10 text-white/90 border border-white/10",
+                    isUser ? "bg-red-600 text-white shadow-sm" : "bg-red-50 text-red-900 border border-red-100",
                   ].join(" ")}
                 >
                   {cleaned}
                 </div>
                 {isUser && (
-                  <div className="mt-0.5 rounded-full bg-white/10 p-1">
-                    <User className="h-4 w-4 text-white/80" />
+                  <div className="mt-0.5 rounded-full bg-red-100 p-1">
+                    <User className="h-4 w-4 text-red-700" />
                   </div>
                 )}
               </div>
             )
           })}
           {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-white/60">
+            <div className="flex items-center gap-2 text-sm text-red-600">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              {'Thinking...'}
+              Thinking...
             </div>
           )}
-          {error && <div className="text-sm text-rose-300">{error}</div>}
+          {error && <div className="text-sm text-red-700">{error}</div>}
         </div>
       </div>
 
@@ -204,9 +192,12 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Chat here..."
-          className="h-11 rounded-full border-white/20 bg-black text-white placeholder:text-white/50 focus-visible:ring-0"
+          className="h-11 rounded-full border-red-200 bg-white text-red-900 placeholder:text-red-900/50 focus-visible:ring-0"
         />
-        <Button type="submit" className="h-11 rounded-full border border-white/20 bg-white px-4 text-black hover:bg-white/90">
+        <Button
+          type="submit"
+          className="h-11 rounded-full border border-red-600 bg-red-600 px-4 text-white hover:bg-red-700"
+        >
           <Send className="mr-2 h-4 w-4" />
           Send
         </Button>
