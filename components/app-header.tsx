@@ -2,31 +2,29 @@
 
 import { ClipboardCheck, LogOut } from 'lucide-react'
 import { ApiKeySettings } from "./api-key-settings"
-import { useTasks } from "./task-context"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 
 export function AppHeader() {
-  const { source } = useTasks()
   const supabase = getSupabaseClient()
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
 
   useEffect(() => {
-    let active = true
+    if (!supabase) return
+    let mounted = true
     ;(async () => {
-      if (!supabase) return
       const { data } = await supabase.auth.getUser()
-      if (active) setEmail(data.user?.email ?? null)
-      const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-        setEmail(session?.user?.email ?? null)
-      })
-      return () => sub.subscription.unsubscribe()
+      if (mounted) setEmail(data.user?.email ?? null)
     })()
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setEmail(session?.user?.email ?? null)
+    })
     return () => {
-      active = false
+      mounted = false
+      sub.subscription.unsubscribe()
     }
   }, [supabase])
 
@@ -35,7 +33,6 @@ export function AppHeader() {
     router.refresh()
   }
 
-  const supa = source === "supabase"
   return (
     <header className="mx-auto max-w-5xl px-4 pb-6 pt-8 text-white">
       <div className="flex items-end justify-between">
@@ -44,18 +41,8 @@ export function AppHeader() {
             <ClipboardCheck className="h-6 w-6 text-white/80" />
           </div>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">{'SmartTask Chat'}</h1>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
-              <p className="text-white/60">{'Black & white • Chat to add, organize, and complete tasks'}</p>
-              <span className={`rounded-full px-2 py-0.5 text-xs ${supa ? "border border-white/20 bg-white/10 text-white" : "border border-white/10 text-white/60"}`}>
-                {supa ? "Supabase Connected" : "Local Only"}
-              </span>
-              {email && (
-                <span className="rounded-full border border-white/20 px-2 py-0.5 text-xs text-white/90">
-                  {email}
-                </span>
-              )}
-            </div>
+            <h1 className="text-2xl font-semibold tracking-tight">{"SmartTask Chat"}</h1>
+            {/* Removed tagline and status pill */}
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -68,13 +68,14 @@ const LISTS_KEY = "chat_smart_lists_v1"
 const FILTERS_KEY = "chat_smart_filters_v1"
 const SMART_KEY = "chat_smart_results_v1"
 const DEVICE_KEY = "chat_smart_device_id"
+const MIGRATED_FLAG_PREFIX = "migrated_"
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const supabase = getSupabaseClient()
-  const source: "local" | "supabase" = supabase ? "supabase" : "local"
 
   const [deviceId, setDeviceId] = useState<string>("")
   const [userId, setUserId] = useState<string>("")
+  const [source, setSource] = useState<"local" | "supabase">("local")
   const [scopeId, setScopeId] = useState<string>("")
 
   const [tasks, setTasks] = useState<Task[]>([])
@@ -92,7 +93,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setDeviceId(id)
   }, [])
 
-  // listen to auth
+  // auth listener
   useEffect(() => {
     if (!supabase) return
     ;(async () => {
@@ -107,66 +108,107 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
   }, [supabase])
 
-  // scope id = userId || deviceId
+  // compute source and scope
   useEffect(() => {
-    setScopeId(userId || deviceId)
+    const isAuthed = Boolean(userId)
+    setSource(supabase && isAuthed ? "supabase" : "local")
+    setScopeId(isAuthed ? userId : deviceId)
+  }, [supabase, userId, deviceId])
+
+  // one-time migration upon first login (server-side service key)
+  useEffect(() => {
+    const doMigrate = async () => {
+      if (!supabase || !userId || !deviceId) return
+      const flagKey = `${MIGRATED_FLAG_PREFIX}${userId}`
+      if (localStorage.getItem(flagKey) === "1") return
+
+      try {
+        const { data: session } = await supabase.auth.getSession()
+        const token = session.session?.access_token
+        if (!token) return
+        const res = await fetch("/api/migrate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ deviceId }),
+        })
+        if (res.ok) {
+          localStorage.setItem(flagKey, "1")
+          // After migration, reload lists/tasks from Supabase
+          await loadFromSupabase(userId)
+        }
+      } catch (e) {
+        console.warn("Migration request failed:", e)
+      }
+    }
+    doMigrate()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, deviceId])
 
-  // initial load
+  // initial load and whenever source/scope switches
   useEffect(() => {
     if (!scopeId) return
     if (source === "supabase") {
-      ;(async () => {
-        // lists
-        const { data: lrows } = await supabase!
-          .from("lists")
-          .select("*")
-          .eq("device_id", scopeId)
-          .order("created_at", { ascending: true })
-        let loadedLists = (lrows ?? []).map(fromDbList)
-        if (!loadedLists || loadedLists.length === 0) {
-          const defaults = [
-            { id: uuid(), device_id: scopeId, name: "General", color: "#888888" },
-            { id: uuid(), device_id: scopeId, name: "Work", color: "#cccccc" },
-            { id: uuid(), device_id: scopeId, name: "Groceries", color: "#aaaaaa" },
-          ]
-          await supabase!.from("lists").insert(defaults)
-          loadedLists = defaults.map((r) => ({ id: r.id, name: r.name, color: r.color || undefined }))
-        }
-        setLists(loadedLists)
-        // tasks
-        const { data: trows } = await supabase!
-          .from("tasks")
-          .select("*")
-          .eq("device_id", scopeId)
-          .order("created_at", { ascending: false })
-        setTasks((trows ?? []).map(fromDbTask))
-        // filters/smart
-        const fRaw = localStorage.getItem(FILTERS_KEY)
-        const sRaw = localStorage.getItem(SMART_KEY)
-        setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
-        setSmartResultsState(sRaw ? JSON.parse(sRaw) : [])
-      })()
+      loadFromSupabase(scopeId)
     } else {
-      // local mode
-      const tRaw = localStorage.getItem(TASKS_KEY)
-      const lRaw = localStorage.getItem(LISTS_KEY)
-      const fRaw = localStorage.getItem(FILTERS_KEY)
-      const sRaw = localStorage.getItem(SMART_KEY)
-      setTasks(tRaw ? JSON.parse(tRaw) : [])
-      setLists(
-        lRaw
-          ? JSON.parse(lRaw)
-          : [
-              { id: uuid(), name: "General", color: "#888888" },
-              { id: uuid(), name: "Work", color: "#cccccc" },
-              { id: uuid(), name: "Groceries", color: "#aaaaaa" },
-            ]
-      )
-      setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
-      setSmartResultsState(sRaw ? JSON.parse(sRaw) : [])
+      loadFromLocal()
     }
-  }, [source, supabase, scopeId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, scopeId])
+
+  async function loadFromSupabase(ownerId: string) {
+    if (!supabase) return
+    const { data: lrows } = await supabase
+      .from("lists")
+      .select("*")
+      .eq("device_id", ownerId)
+      .order("created_at", { ascending: true })
+    let loadedLists = (lrows ?? []).map(fromDbList)
+    if (loadedLists.length === 0) {
+      const defaults = [
+        { id: uuid(), device_id: ownerId, name: "General", color: "#888888" },
+        { id: uuid(), device_id: ownerId, name: "Work", color: "#cccccc" },
+        { id: uuid(), device_id: ownerId, name: "Groceries", color: "#aaaaaa" },
+      ]
+      await supabase.from("lists").insert(defaults)
+      loadedLists = defaults.map((r) => ({ id: r.id, name: r.name, color: r.color || undefined }))
+    }
+    setLists(loadedLists)
+
+    const { data: trows } = await supabase
+      .from("tasks")
+      .select("*")
+      .eq("device_id", ownerId)
+      .order("created_at", { ascending: false })
+    setTasks((trows ?? []).map(fromDbTask))
+
+    // restore filters/smart from local
+    const fRaw = localStorage.getItem(FILTERS_KEY)
+    const sRaw = localStorage.getItem(SMART_KEY)
+    setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
+    setSmartResultsState(sRaw ? JSON.parse(sRaw) : [])
+  }
+
+  function loadFromLocal() {
+    const tRaw = localStorage.getItem(TASKS_KEY)
+    const lRaw = localStorage.getItem(LISTS_KEY)
+    const fRaw = localStorage.getItem(FILTERS_KEY)
+    const sRaw = localStorage.getItem(SMART_KEY)
+    setTasks(tRaw ? JSON.parse(tRaw) : [])
+    setLists(
+      lRaw
+        ? JSON.parse(lRaw)
+        : [
+            { id: uuid(), name: "General", color: "#888888" },
+            { id: uuid(), name: "Work", color: "#cccccc" },
+            { id: uuid(), name: "Groceries", color: "#aaaaaa" },
+          ]
+    )
+    setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
+    setSmartResultsState(sRaw ? JSON.parse(sRaw) : [])
+  }
 
   // persist filters and smart results
   useEffect(() => {
@@ -195,8 +237,8 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     const newList: TaskList = { id, name, color: undefined }
     setLists((prev) => [...prev, newList])
 
-    if (source === "supabase") {
-      await supabase!.from("lists").insert({ id, device_id: scopeId, name, color: null })
+    if (source === "supabase" && supabase) {
+      await supabase.from("lists").insert({ id, device_id: scopeId, name, color: null })
     }
     return id
   }, [lists, source, supabase, scopeId])
@@ -217,15 +259,15 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
         return updated
       })
     )
-    if (source === "supabase" && newTask) {
-      await supabase!.from("tasks").update({ status: newTask.status, updated_at: now }).eq("id", id).eq("device_id", scopeId)
+    if (source === "supabase" && supabase && newTask) {
+      await supabase.from("tasks").update({ status: newTask.status, updated_at: now }).eq("id", id).eq("device_id", scopeId)
     }
   }, [source, supabase, scopeId])
 
   const deleteTask = useCallback(async (id: string) => {
     setTasks((prev) => prev.filter((t) => t.id !== id))
-    if (source === "supabase") {
-      await supabase!.from("tasks").delete().eq("id", id).eq("device_id", scopeId)
+    if (source === "supabase" && supabase) {
+      await supabase.from("tasks").delete().eq("id", id).eq("device_id", scopeId)
     }
   }, [source, supabase, scopeId])
 
@@ -252,9 +294,9 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     }
     setTasks((prev) => [t, ...prev])
 
-    if (source === "supabase") {
+    if (source === "supabase" && supabase) {
       const row = toDbTask(scopeId, t)
-      await supabase!.from("tasks").insert(row)
+      await supabase.from("tasks").insert(row)
     }
   }, [addList, source, supabase, scopeId])
 
@@ -301,7 +343,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               prev.map((x) => (x.id === t.id ? { ...x, ...patchLocal } : x))
             )
 
-            if (source === "supabase") {
+            if (source === "supabase" && supabase) {
               const dbPatch: any = {}
               if (patchLocal.title !== undefined) dbPatch.title = patchLocal.title
               if (patchLocal.notes !== undefined) dbPatch.notes = patchLocal.notes
@@ -313,7 +355,7 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
               if (patchLocal.listId !== undefined) dbPatch.list_id = patchLocal.listId ?? null
               if (patchLocal.status !== undefined) dbPatch.status = patchLocal.status
               dbPatch.updated_at = now
-              await supabase!.from("tasks").update(dbPatch).eq("id", t.id).eq("device_id", scopeId)
+              await supabase.from("tasks").update(dbPatch).eq("id", t.id).eq("device_id", scopeId)
             }
           }
         } else if (a.type === "set_filter") {
