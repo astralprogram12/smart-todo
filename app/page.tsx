@@ -4,26 +4,37 @@ import { AppHeader } from "@/components/app-header"
 import { TaskProvider } from "@/components/task-context"
 import { ChatCore } from "@/components/chat-core"
 import { TaskPanel } from "@/components/task-panel"
+import { SmartPanel } from "@/components/smart-panel"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { AuthGate } from "@/components/auth-gate"
 
 export default function HomePage() {
   return (
     <TaskProvider>
-      <main className="min-h-screen bg-gradient-to-b from-[#0f1020] via-[#141527] to-[#0f1115] text-white">
-        <div className="relative">
-          <div className="absolute inset-0 -z-10 opacity-50">
-            <img
-              src="/images/hero-texture.png"
-              alt="Abstract gradient texture"
-              className="h-56 w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
-          </div>
-          <AppHeader />
-        </div>
+      <main className="min-h-screen bg-black text-white">
+        <AppHeader />
+        <div className="mx-auto max-w-5xl px-4 pb-16">
+          <AuthGate allowGuest>
+            <Tabs defaultValue="smart" className="w-full">
+              <TabsList className="mb-6 border border-white/10 bg-black">
+                <TabsTrigger value="smart" className="data-[state=active]:bg-white/10 data-[state=active]:text-white">
+                  Smart Tasks
+                </TabsTrigger>
+                <TabsTrigger value="all" className="data-[state=active]:bg-white/10 data-[state=active]:text-white">
+                  All Tasks
+                </TabsTrigger>
+              </TabsList>
 
-        <div className="mx-auto max-w-7xl gap-6 px-4 pb-20 lg:grid lg:grid-cols-[1.1fr_0.9fr]">
-          <ChatCore />
-          <TaskPanel />
+              <TabsContent value="smart" className="space-y-6">
+                <SmartPanel />
+                <ChatCore compact height={260} showExtras={false} />
+              </TabsContent>
+
+              <TabsContent value="all" className="space-y-6">
+                <TaskPanel />
+              </TabsContent>
+            </Tabs>
+          </AuthGate>
         </div>
       </main>
     </TaskProvider>

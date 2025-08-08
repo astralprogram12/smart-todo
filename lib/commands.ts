@@ -17,10 +17,24 @@ export function parseActionsFromAssistant(text: string): CommandAction[] {
   }
 }
 
+export function parseRecommendationsFromAssistant(text: string): { id?: string; title?: string }[] {
+  const match = text.match(/```json([\s\S]*?)```/i)
+  if (!match) return []
+  try {
+    const obj = JSON.parse(match[1].trim())
+    const recs = Array.isArray(obj?.recommendations) ? obj.recommendations : []
+    return recs.map((r) => ({ id: r?.id, title: r?.title })).filter((r) => r.id || r.title)
+  } catch {
+    return []
+  }
+}
+
 // Local fallback planner used when no API key is configured
 export function localPlan(messages: any[], taskContext?: any): { text: string; actions: CommandAction[] } {
   const lastUser = [...messages].reverse().find((m) => m?.role === "user")
-  const userText: string = lastUser?.content?.map?.((p: any) => (p.type === "text" ? p.text : "")).join("\n") ?? ""
+  const userText: string = lastUser?.parts?.map?.((p: any) => (p.type === "text" ? p.text : "")).join("\n")
+    ?? lastUser?.content?.map?.((p: any) => (p.type === "text" ? p.text : "")).join("\n")
+    ?? ""
 
   const now = new Date()
   const tasks = taskContext?.tasks ?? []
@@ -45,9 +59,8 @@ export function localPlan(messages: any[], taskContext?: any): { text: string; a
     for (const t of easyToday) text += `- ${t.title}\n`
   }
 
-  // Very basic intent: if user says "add task:" create naive add
-  const addMatch = userText.match(/add task\s*:\s*(.+)/i)
   const actions: CommandAction[] = []
+  const addMatch = userText.match(/add task\s*:\s*(.+)/i)
   if (addMatch) {
     actions.push({
       type: "add_task",
@@ -58,7 +71,6 @@ export function localPlan(messages: any[], taskContext?: any): { text: string; a
       tags: ["quick"],
     })
   } else if (/what can i complete today/i.test(userText)) {
-    // No state changes, just keep current filter to 'today'
     actions.push({ type: "set_filter", view: "today" })
   }
 

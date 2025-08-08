@@ -21,28 +21,36 @@ You MUST always answer in two parts:
   { "type": "complete_task", "id":"string?", "titleMatch":"string?", "done": true },
   { "type": "delete_task", "id":"string?", "titleMatch":"string?" },
   { "type": "set_filter", "view":"all|today|overdue|week|none", "listName":"string?", "category":"string?", "tag":"string?" }
-] }
+], "recommendations": [{ "id?": "string", "title?": "string" }] }
 \`\`\`
 
 Guidelines:
-- Always include the JSON actions block, even if empty.
-- When adding tasks, propose category, tags (lowercase slugs), listName, difficulty, and priority. Normalize dueDate to YYYY-MM-DD.
-- Prefer referencing tasks by "id" from the Task Context; if not available, include a "titleMatch" with the exact title.
+- Always include the JSON actions block (array can be empty).
+- Prefer referencing tasks by "id" from the Task Context; otherwise include "titleMatch" or "title" in recommendations.
 - If user asks "what can I complete today", pick easy or quick tasks due today/overdue.
-- If the user wants to organize, you can emit multiple actions: move tasks (update_task with listName), add tags, set filter, etc.
   `.trim()
 
-  const hasKey = !!process.env.GOOGLE_GENERATIVE_AI_API_KEY
-  if (!hasKey) {
-    // Local fallback planner returns a compact assistant message + actions JSON.
+  const headerKey = req.headers.get("x-gemini-key") || undefined
+  const envKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
+  const useKey = headerKey || envKey
+
+  if (!useKey) {
+    // Local fallback
     const { text, actions } = localPlan(messages, taskContext)
     return new Response(
       JSON.stringify({
         type: "message",
         id: "local-fallback",
         role: "assistant",
-        content: [
-          { type: "text", text: text.trim() + "\n\n```json\n" + JSON.stringify({ actions }, null, 2) + "\n```" },
+        parts: [
+          {
+            type: "text",
+            text:
+              text.trim() +
+              "\n\n```json\n" +
+              JSON.stringify({ actions }, null, 2) +
+              "\n```",
+          },
         ],
       }),
       { headers: { "Content-Type": "application/json" } }
@@ -50,7 +58,7 @@ Guidelines:
   }
 
   const result = streamText({
-    model: google("gemini-2.5-flash"),
+    model: google("gemini-2.5-flash", { apiKey: useKey }),
     messages: convertToModelMessages(messages),
     system,
     maxTokens: 900,

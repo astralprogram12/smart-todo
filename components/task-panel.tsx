@@ -42,10 +42,10 @@ export function TaskPanel() {
   }, [tasks, filters])
 
   return (
-    <aside className="h-fit rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur">
+    <aside className="h-fit rounded-2xl border border-white/10 bg-black p-4">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{'Tasks'}</h2>
-        <div className="text-xs text-white/70">
+        <h2 className="text-lg font-semibold text-white">{'All Tasks'}</h2>
+        <div className="text-xs text-white/60">
           {visible.length} / {tasks.length} visible
         </div>
       </div>
@@ -78,7 +78,7 @@ export function TaskPanel() {
           <li
             key={t.id}
             className={cn(
-              "group rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur transition hover:bg-white/10",
+              "group rounded-xl border border-white/10 bg-black p-3 transition hover:bg-white/5",
               t.status === "done" && "opacity-70"
             )}
           >
@@ -97,20 +97,11 @@ export function TaskPanel() {
                     {t.notes && <p className="mt-0.5 line-clamp-2 text-sm text-white/70">{t.notes}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-xs",
-                        t.difficulty === "easy" && "bg-emerald-500/15 text-emerald-300",
-                        t.difficulty === "medium" && "bg-amber-500/15 text-amber-300",
-                        t.difficulty === "hard" && "bg-rose-500/15 text-rose-300"
-                      )}
-                    >
-                      {t.difficulty}
-                    </span>
+                    <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/90">{t.difficulty}</span>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-white/70 hover:text-rose-300"
+                      className="text-white/80 hover:text-white"
                       onClick={() => deleteTask(t.id)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -185,8 +176,8 @@ function FilterChip({
       className={cn(
         "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs",
         active
-          ? "border-white/20 bg-white/15 text-white"
-          : "border-white/10 bg-white/5 text-white/80 hover:bg-white/10"
+          ? "border-white/30 bg-white/10 text-white"
+          : "border-white/10 bg-black text-white/80 hover:bg-white/5"
       )}
     >
       {icon}
