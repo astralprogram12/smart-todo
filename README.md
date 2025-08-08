@@ -1,4 +1,4 @@
-# Gemini todo app
+# Gemini todo app 2.0
 
 *Automatically synced with your [v0.dev](https://v0.dev) deployments*
 
