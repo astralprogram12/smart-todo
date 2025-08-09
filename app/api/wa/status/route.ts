@@ -25,6 +25,12 @@ export async function GET(req: NextRequest) {
     const uid = await getUserId(req)
     if (!uid) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+    // Ensure user_plan row exists (default free)
+    const { data: planRow } = await supa.from("user_plan").select("plan").eq("user_id", uid).maybeSingle()
+    if (!planRow) {
+      await supa.from("user_plan").insert({ user_id: uid, plan: "free" })
+    }
+
     const { data: plan } = await supa.from("user_plan").select("plan").eq("user_id", uid).maybeSingle()
     const premium = (plan?.plan ?? "free") === "premium"
 

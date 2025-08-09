@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { BadgeCheck, Phone, ShieldCheck } from "lucide-react"
+import { BadgeCheck, Phone, ShieldCheck, Lock } from "lucide-react"
 import { getAuthHeaders } from "@/lib/identity"
 
 type Status = {
@@ -91,11 +91,7 @@ export function WaVerify() {
     }
   }
 
-  if (!premium) {
-    // Hide completely if not premium
-    return null
-  }
-
+  // Always render the button; for free users show a blocked dialog with a message.
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -104,13 +100,19 @@ export function WaVerify() {
             <BadgeCheck className="mr-2 h-4 w-4" />
             WhatsApp Connected
           </Button>
-        ) : (
+        ) : premium ? (
           <Button className="bg-[color:var(--brand)] text-[color:var(--on-brand)] hover:opacity-90">
             <Phone className="mr-2 h-4 w-4" />
             Verify WhatsApp
           </Button>
+        ) : (
+          <Button variant="outline" className="bg-white" style={{ color: "var(--brand)", borderColor: "var(--brand)" }}>
+            <Lock className="mr-2 h-4 w-4" />
+            Verify WhatsApp
+          </Button>
         )}
       </DialogTrigger>
+
       <DialogContent className="max-w-md bg-white">
         <DialogHeader>
           <DialogTitle style={{ color: "var(--secondary)" }}>
@@ -118,7 +120,21 @@ export function WaVerify() {
           </DialogTitle>
         </DialogHeader>
 
-        {!connected && step === "enter" && (
+        {!premium ? (
+          <div className="space-y-3">
+            <p className="text-sm text-gray-700">
+              {"This feature is still coming soon for free user but can be used for premium"}
+            </p>
+            <p className="text-xs text-gray-500">Sign in with a premium account to enable WhatsApp verification.</p>
+          </div>
+        ) : connected ? (
+          <div className="rounded-lg border p-3" style={{ borderColor: "var(--tertiary)", background: "#fff" }}>
+            <div className="flex items-center gap-2 text-sm" style={{ color: "var(--secondary)" }}>
+              <ShieldCheck className="h-4 w-4" style={{ color: "var(--brand)" }} />
+              Your WhatsApp is connected. We’ll use it for premium notifications and verification.
+            </div>
+          </div>
+        ) : step === "enter" ? (
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
               Enter your phone number to receive a verification code via WhatsApp.
@@ -151,9 +167,7 @@ export function WaVerify() {
               </div>
             </div>
           </div>
-        )}
-
-        {!connected && step === "code" && (
+        ) : step === "code" ? (
           <div className="space-y-3">
             <p className="text-sm text-gray-600">Enter the 6-digit code we sent to your WhatsApp.</p>
             <Input
@@ -164,19 +178,18 @@ export function WaVerify() {
               maxLength={6}
             />
           </div>
-        )}
-
-        {connected && (
-          <div className="rounded-lg border p-3" style={{ borderColor: "var(--tertiary)", background: "#fff" }}>
-            <div className="flex items-center gap-2 text-sm" style={{ color: "var(--secondary)" }}>
-              <ShieldCheck className="h-4 w-4" style={{ color: "var(--brand)" }} />
-              Your WhatsApp is connected. We’ll use it for premium notifications and verification.
-            </div>
-          </div>
-        )}
+        ) : null}
 
         <DialogFooter className="mt-2">
-          {!connected && step === "enter" && (
+          {!premium ? (
+            <Button onClick={() => setOpen(false)} className="bg-[color:var(--brand)] text-[color:var(--on-brand)]">
+              Close
+            </Button>
+          ) : connected ? (
+            <Button onClick={() => setOpen(false)} className="bg-[color:var(--brand)] text-[color:var(--on-brand)]">
+              Done
+            </Button>
+          ) : step === "enter" ? (
             <>
               <Button variant="ghost" onClick={() => setOpen(false)}>
                 Cancel
@@ -185,8 +198,7 @@ export function WaVerify() {
                 {loading ? "Sending…" : "Send code"}
               </Button>
             </>
-          )}
-          {!connected && step === "code" && (
+          ) : (
             <>
               <Button variant="ghost" onClick={() => setStep("enter")}>
                 Back
@@ -195,11 +207,6 @@ export function WaVerify() {
                 {loading ? "Verifying…" : "Verify"}
               </Button>
             </>
-          )}
-          {connected && (
-            <Button onClick={() => setOpen(false)} className="bg-[color:var(--brand)] text-[color:var(--on-brand)]">
-              Done
-            </Button>
           )}
         </DialogFooter>
       </DialogContent>

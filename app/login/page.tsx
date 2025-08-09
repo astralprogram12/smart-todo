@@ -25,6 +25,18 @@ export default function LoginPage() {
     if (m === "signup") setMode("signup")
   }, [searchParams])
 
+  async function ensurePlan() {
+    try {
+      const { data } = await supabase!.auth.getSession()
+      const token = data.session?.access_token
+      if (!token) return
+      await fetch("/api/auth/ensure-plan", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      })
+    } catch {}
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!supabase) {
@@ -43,6 +55,7 @@ export default function LoginPage() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email: emailNorm, password })
         if (error) throw error
+        await ensurePlan()
         router.push("/")
         router.refresh()
       } else {
@@ -62,7 +75,6 @@ export default function LoginPage() {
         // Proceed with Supabase sign-up
         const { error } = await supabase.auth.signUp({ email: emailNorm, password })
         if (error) {
-          // Handle common duplicate message from Supabase as a safeguard
           const msg = (error.message || "").toLowerCase()
           if (msg.includes("already registered") || msg.includes("user already exists")) {
             setError("This email is already registered. Please sign in.")

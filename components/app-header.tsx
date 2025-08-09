@@ -20,9 +20,19 @@ function AppHeader() {
     ;(async () => {
       const { data } = await supabase.auth.getUser()
       if (mounted) setEmail(data.user?.email ?? null)
+      // Ensure plan exists after we know user
+      const { data: s } = await supabase.auth.getSession()
+      const token = s.session?.access_token
+      if (token) {
+        await fetch("/api/auth/ensure-plan", { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+      }
     })()
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, session) => {
       setEmail(session?.user?.email ?? null)
+      const token = session?.access_token
+      if (token) {
+        await fetch("/api/auth/ensure-plan", { method: "POST", headers: { Authorization: `Bearer ${token}` } })
+      }
     })
     return () => {
       mounted = false

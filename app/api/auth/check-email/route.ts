@@ -14,12 +14,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Server not configured" }, { status: 500 })
     }
 
-    // Query GoTrue Admin list users filtered by email
-    // Docs: /auth/v1/admin/users?email=<email>
+    // Supabase Admin API: list users filtered by email
     const res = await fetch(`${url}/auth/v1/admin/users?email=${encodeURIComponent(e)}`, {
       headers: {
         apikey: key,
         authorization: `Bearer ${key}`,
+        accept: "application/json",
       },
       cache: "no-store",
     })
@@ -29,8 +29,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Admin API failed", details: text }, { status: 502 })
     }
 
-    const data = (await res.json()) as any[]
-    const exists = Array.isArray(data) && data.length > 0
+    const raw = await res.json()
+    // Handle both shapes: either an array or { users: [...] }
+    const users = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : []
+    const exists = users.length > 0
     return NextResponse.json({ exists })
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || "Unknown error" }, { status: 500 })
