@@ -1,7 +1,9 @@
 "use client"
 
+import type React from "react"
+
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Send, Bot, User, Loader2 } from 'lucide-react'
+import { Send, Bot, User, Loader2 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useTasks } from "./task-context"
@@ -15,13 +17,13 @@ type Props = {
   showExtras?: boolean
 }
 
-// Remove fenced ```json ... ``` blocks (still parsed elsewhere)
+// Remove fenced ```json ... ``` blocks (we still parse elsewhere)
 function stripJsonBlocks(text: string) {
-  const withoutCode = text.replace(/\`\`\`json[\s\S]*?\`\`\`/gi, "").replace(/\`\`\`[\s\S]*?\`\`\`/g, "")
+  const withoutCode = text.replace(/```json[\s\S]*?```/gi, "").replace(/```[\s\S]*?```/g, "")
   return withoutCode.trim()
 }
 
-export function ChatCore({ compact = false, height = 300, showExtras = false }: Props) {
+export function ChatCore({ height = 300 }: Props) {
   const { tasks, lists, filters, applyActions, setSmartResults } = useTasks()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -30,7 +32,6 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
   const [input, setInput] = useState("")
   const scrollRef = useRef<HTMLDivElement | null>(null)
 
-  // Auto scroll on new messages
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" })
   }, [messages, isLoading])
@@ -53,10 +54,9 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
       })),
       filters,
     }),
-    [tasks, lists, filters]
+    [tasks, lists, filters],
   )
 
-  // Probe availability once
   useEffect(() => {
     async function probe() {
       try {
@@ -71,7 +71,7 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
       }
     }
     probe()
-  }, []) // once
+  }, [])
 
   async function submitMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -99,11 +99,9 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
       const asstMsg: Msg = { id: crypto.randomUUID(), role: "assistant", text: reply }
       setMessages((prev) => [...prev, asstMsg])
 
-      // Apply actions and compute Smart results
       const actions = parseActionsFromAssistant(reply)
-      if (actions.length > 0) {
-        applyActions(actions)
-      }
+      if (actions.length > 0) applyActions(actions)
+
       const recs = parseRecommendationsFromAssistant(reply)
       if (recs.length > 0) {
         const ids = new Set<string>()
@@ -122,7 +120,7 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
         const idsFromFilter = computeIdsFromFilter(actions, tasks, lists)
         if (idsFromFilter.length > 0) setSmartResults(idsFromFilter)
       }
-    } catch (err: any) {
+    } catch {
       setError("Something went wrong.")
     } finally {
       setIsLoading(false)
@@ -130,21 +128,29 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
   }
 
   return (
-    <section className="relative rounded-2xl border border-red-100 bg-gradient-to-b from-white to-red-50 p-4 shadow-xl">
+    <section
+      className="relative rounded-2xl border p-4 shadow-xl"
+      style={{
+        borderColor: "var(--tertiary)",
+        background: "linear-gradient(to bottom, #ffffff, var(--tertiary-soft))",
+      }}
+    >
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-red-900">Assistant</h2>
-        <div className="text-xs text-red-700/70">
+        <h2 className="text-lg font-semibold" style={{ color: "var(--secondary)" }}>
+          Assistant
+        </h2>
+        <div className="text-xs" style={{ color: "color-mix(in srgb, var(--secondary) 70%, transparent)" }}>
           {aiAvailable === null ? "Checking AI..." : aiAvailable ? "AI Ready" : "Local mode"}
         </div>
       </div>
 
       <div
         ref={scrollRef}
-        className="mb-3 w-full overflow-y-auto rounded-2xl border border-red-100 bg-white p-3"
-        style={{ height }}
+        className="mb-3 w-full overflow-y-auto rounded-2xl border p-3"
+        style={{ borderColor: "var(--tertiary)", background: "#ffffff", height }}
       >
         {messages.length === 0 && (
-          <div className="text-sm text-red-900/70">
+          <div className="text-sm" style={{ color: "color-mix(in srgb, var(--secondary) 70%, transparent)" }}>
             {"Try: "}
             <em>{"What can I complete today?"}</em>, {"Add task: Buy milk tomorrow"}, {"Show errands due this week"}
           </div>
@@ -156,34 +162,46 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
             return (
               <div key={m.id} className={`flex items-start gap-2 ${isUser ? "justify-end" : "justify-start"}`}>
                 {!isUser && (
-                  <div className="mt-0.5 rounded-full bg-red-100 p-1">
-                    <Bot className="h-4 w-4 text-red-700" />
+                  <div className="mt-0.5 rounded-full p-1" style={{ background: "var(--brand-soft)" }}>
+                    <Bot className="h-4 w-4" style={{ color: "var(--brand)" }} />
                   </div>
                 )}
                 <div
                   className={[
-                    "max-w-[80%] whitespace-pre-wrap text-sm",
-                    "rounded-2xl px-3 py-2",
-                    isUser ? "bg-red-600 text-white shadow-sm" : "bg-red-50 text-red-900 border border-red-100",
+                    "max-w-[80%] whitespace-pre-wrap text-sm rounded-2xl px-3 py-2",
+                    isUser ? "" : "border",
                   ].join(" ")}
+                  style={
+                    isUser
+                      ? { background: "var(--brand)", color: "var(--on-brand)" }
+                      : {
+                          background: "var(--tertiary-soft)",
+                          color: "var(--secondary)",
+                          borderColor: "var(--tertiary)",
+                        }
+                  }
                 >
                   {cleaned}
                 </div>
                 {isUser && (
-                  <div className="mt-0.5 rounded-full bg-red-100 p-1">
-                    <User className="h-4 w-4 text-red-700" />
+                  <div className="mt-0.5 rounded-full p-1" style={{ background: "var(--brand-soft)" }}>
+                    <User className="h-4 w-4" style={{ color: "var(--brand)" }} />
                   </div>
                 )}
               </div>
             )
           })}
           {isLoading && (
-            <div className="flex items-center gap-2 text-sm text-red-600">
+            <div className="flex items-center gap-2 text-sm" style={{ color: "var(--brand)" }}>
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               Thinking...
             </div>
           )}
-          {error && <div className="text-sm text-red-700">{error}</div>}
+          {error && (
+            <div className="text-sm" style={{ color: "color-mix(in srgb, var(--secondary) 85%, transparent)" }}>
+              {error}
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,11 +210,13 @@ export function ChatCore({ compact = false, height = 300, showExtras = false }: 
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Chat here..."
-          className="h-11 rounded-full border-red-200 bg-white text-red-900 placeholder:text-red-900/50 focus-visible:ring-0"
+          className="h-11 rounded-full bg-white"
+          style={{ borderColor: "var(--tertiary)", color: "var(--secondary)" }}
         />
         <Button
           type="submit"
-          className="h-11 rounded-full border border-red-600 bg-red-600 px-4 text-white hover:bg-red-700"
+          className="h-11 rounded-full px-4"
+          style={{ background: "var(--brand)", color: "var(--on-brand)", borderColor: "var(--brand)" }}
         >
           <Send className="mr-2 h-4 w-4" />
           Send

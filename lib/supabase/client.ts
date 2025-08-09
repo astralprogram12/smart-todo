@@ -1,18 +1,20 @@
+"use client"
+
 import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 
-let client: SupabaseClient | null = null
+let browserClient: SupabaseClient | null = null
 
-export function getSupabaseClient() {
-  if (client) return client
-  const url = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim()
-  const anon = (process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim()
-  if (!url || !anon) return null
-  client = createClient(url, anon, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-      storageKey: "smart_todo_supabase_auth",
-    },
-  })
-  return client
+export function getSupabaseClient(): SupabaseClient | null {
+  try {
+    if (browserClient) return browserClient
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!url || !anon) return null
+    browserClient = createClient(url, anon, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    })
+    return browserClient
+  } catch {
+    return null
+  }
 }

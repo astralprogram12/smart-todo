@@ -1,12 +1,14 @@
 "use client"
 
-import { ClipboardCheck, LogOut } from 'lucide-react'
-import { getSupabaseClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
+import { ClipboardCheck, LogOut } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { getSupabaseClient } from "@/lib/supabase/client"
+import ThemeClient from "@/components/theme-client"
+import { Settings } from "@/components/settings"
 
-export function AppHeader() {
+function AppHeader() {
   const supabase = getSupabaseClient()
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
@@ -33,33 +35,43 @@ export function AppHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 mx-auto mb-4 w-full max-w-5xl bg-white/90 px-4 pb-4 pt-6 backdrop-blur supports-[backdrop-filter]:bg-white/70">
-      <div className="flex items-end justify-between">
+    <header
+      className="sticky top-0 z-40 border-b bg-white/90 backdrop-blur supports-[backdrop-filter]:bg-white/60"
+      style={{ borderColor: "var(--tertiary)" }}
+    >
+      <ThemeClient />
+      <div className="mx-auto flex max-w-5xl items-end justify-between px-4 pb-3 pt-5">
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-red-200 bg-red-50 p-2">
-            <ClipboardCheck className="h-6 w-6 text-red-700" />
+          <div
+            className="rounded-xl border p-2"
+            style={{ borderColor: "var(--tertiary)", background: "var(--brand-soft)" }}
+          >
+            <ClipboardCheck className="h-6 w-6" style={{ color: "var(--brand)" }} />
           </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-red-900">SmartTask Chat</h1>
-          </div>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--secondary)" }}>
+            SmartTask Chat
+          </h1>
         </div>
         <div className="flex items-center gap-2">
+          <Settings />
           {email ? (
             <Button
               onClick={signOut}
               variant="outline"
-              className="border-red-600 bg-white text-red-700 hover:bg-red-50"
+              className="bg-white"
+              style={{ color: "var(--brand)", borderColor: "var(--brand)" }}
             >
               <LogOut className="mr-2 h-4 w-4" />
               Sign out
             </Button>
           ) : (
             <Button
-              onClick={() => router.push("/login")}
+              onClick={() => router.push("/login?mode=signup")}
               variant="outline"
-              className="border-red-600 bg-white text-red-700 hover:bg-red-50"
+              className="bg-white"
+              style={{ color: "var(--brand)", borderColor: "var(--brand)" }}
             >
-              Sign in
+              Sign up
             </Button>
           )}
         </div>
@@ -67,3 +79,6 @@ export function AppHeader() {
     </header>
   )
 }
+
+export default AppHeader
+export { AppHeader }
