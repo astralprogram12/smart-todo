@@ -1,17 +1,7 @@
 # Gemini todo app 2.0
 
 
-## Deployment
 
-Your project is live at:
-
-**[https://vercel.com/astralprogram12s-projects/v0-gemini-todo-app](https://vercel.com/astralprogram12s-projects/v0-gemini-todo-app)**
-
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.dev/chat/projects/bE8gtEUTWYY](https://v0.dev/chat/projects/bE8gtEUTWYY)**
 
 ## How It Works
 
