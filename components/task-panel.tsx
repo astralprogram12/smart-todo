@@ -7,11 +7,12 @@ import { useTasks } from "./task-context"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, Tag, Trash2, ListPlus } from "lucide-react"
+import { CalendarDays, Tag, Trash2, ListPlus, Pencil, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { TaskForm } from "@/components/task-form"
 
 export function TaskPanel() {
-  const { tasks, lists, filters, setFilters, toggleDone, deleteTask, getListName } = useTasks()
+  const { tasks, lists, filters, setFilters, toggleDone, deleteTask, getListName, applyActions } = useTasks()
 
   const visible = useMemo(() => {
     const now = new Date()
@@ -45,13 +46,28 @@ export function TaskPanel() {
 
   return (
     <aside className="h-fit rounded-2xl border p-4" style={{ borderColor: "var(--tertiary)", background: "#ffffff" }}>
-      <div className="mb-3 flex items-center justify-between">
-        <h2 className="text-lg font-semibold" style={{ color: "var(--secondary)" }}>
-          All Tasks
-        </h2>
-        <div className="text-xs" style={{ color: "color-mix(in srgb, var(--secondary) 70%, transparent)" }}>
-          {visible.length} / {tasks.length} visible
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold" style={{ color: "var(--secondary)" }}>
+            All Tasks
+          </h2>
+          <div className="text-xs" style={{ color: "color-mix(in srgb, var(--secondary) 70%, transparent)" }}>
+            {visible.length} / {tasks.length} visible
+          </div>
         </div>
+        {/* Add Task button opens TaskForm in create mode */}
+        <TaskForm
+          mode="create"
+          trigger={
+            <Button
+              className="h-8 gap-1 px-3"
+              style={{ background: "var(--brand)", color: "var(--on-brand)", borderColor: "var(--brand)" }}
+            >
+              <Plus className="h-4 w-4" />
+              Add Task
+            </Button>
+          }
+        />
       </div>
 
       <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-4">
@@ -108,12 +124,53 @@ export function TaskPanel() {
                       </p>
                     )}
                   </div>
-                  <span
-                    className="rounded-full px-2 py-0.5 text-xs"
-                    style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
-                  >
-                    {t.difficulty}
-                  </span>
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="rounded-full px-2 py-0.5 text-xs"
+                      style={{ background: "var(--brand-soft)", color: "var(--brand)" }}
+                    >
+                      {t.difficulty}
+                    </span>
+                    {/* Edit Task button opens TaskForm in edit mode */}
+                    <TaskForm
+                      mode="edit"
+                      trigger={
+                        <Button variant="ghost" size="icon" className="h-8 w-8" style={{ color: "var(--brand)" }}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      }
+                      defaultValues={{
+                        title: t.title,
+                        notes: t.notes,
+                        dueDate: t.dueDate,
+                        priority: (t.priority ?? "medium") as "low" | "medium" | "high",
+                      }}
+                      onSubmit={(payload) => {
+                        // Apply update patch via context
+                        applyActions([
+                          {
+                            type: "update_task",
+                            id: t.id,
+                            patch: {
+                              title: payload.title,
+                              notes: payload.notes,
+                              dueDate: payload.dueDate,
+                              priority: payload.priority,
+                            },
+                          },
+                        ])
+                      }}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      style={{ color: "var(--brand)" }}
+                      onClick={() => deleteTask(t.id)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
@@ -145,15 +202,6 @@ export function TaskPanel() {
                       {tg}
                     </Badge>
                   ))}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteTask(t.id)}
-                    className="ml-auto"
-                    style={{ color: "var(--brand)" }}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             </div>

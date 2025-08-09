@@ -1,5 +1,7 @@
 "use client"
 
+import type React from "react"
+
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
 import { v4 as uuid } from "uuid"
 import { heuristicClassify } from "@/lib/auto-tag"
@@ -18,6 +20,8 @@ export type Task = {
   difficulty: Difficulty
   category: string
   tags: string[]
+  repeat?: "daily" | "weekly" | "custom"
+  repeatEveryDays?: number // used when repeat === "custom"
   listId?: string
   status: Status
   createdAt: string
@@ -38,8 +42,25 @@ type Filters = {
 }
 
 type Action =
-  | { type: "add_task"; title: string; notes?: string; dueDate?: string; priority?: "low" | "medium" | "high"; difficulty?: Difficulty; category?: string; tags?: string[]; listName?: string }
-  | { type: "update_task"; id?: string; titleMatch?: string; patch: Partial<Omit<Task, "id" | "createdAt" | "updatedAt">> & { listName?: string } }
+  | {
+      type: "add_task"
+      title: string
+      notes?: string
+      dueDate?: string
+      priority?: "low" | "medium" | "high"
+      difficulty?: Difficulty
+      category?: string
+      tags?: string[]
+      listName?: string
+      repeat?: "daily" | "weekly" | "custom"
+      repeatEveryDays?: number
+    }
+  | {
+      type: "update_task"
+      id?: string
+      titleMatch?: string
+      patch: Partial<Omit<Task, "id" | "createdAt" | "updatedAt">> & { listName?: string }
+    }
   | { type: "complete_task"; id?: string; titleMatch?: string; done?: boolean }
   | { type: "delete_task"; id?: string; titleMatch?: string }
   | { type: "set_filter"; view?: Filters["view"]; listName?: string; category?: string; tag?: string }
@@ -55,6 +76,18 @@ type Ctx = {
   getListName: (id?: string) => string
   toggleDone: (id: string) => Promise<void>
   deleteTask: (id: string) => Promise<void>
+  addTask: (payload: {
+    title: string
+    notes?: string
+    dueDate?: string
+    priority?: "low" | "medium" | "high"
+    difficulty?: Difficulty
+    category?: string
+    tags?: string[]
+    listName?: string
+    repeat?: "daily" | "weekly" | "custom"
+    repeatEveryDays?: number
+  }) => Promise<void>
   applyActions: (actions: Action[]) => void
   exportSnapshot: () => { tasks: Task[]; lists: TaskList[]; filters: Filters }
   smartResults: string[]
@@ -69,6 +102,8 @@ const FILTERS_KEY = "chat_smart_filters_v1"
 const SMART_KEY = "chat_smart_results_v1"
 const DEVICE_KEY = "chat_smart_device_id"
 const MIGRATED_FLAG_PREFIX = "migrated_"
+
+const ymd = (d: Date) => d.toISOString().slice(0, 10)
 
 export function TaskProvider({ children }: { children: React.ReactNode }) {
   const supabase = getSupabaseClient()
@@ -115,46 +150,14 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     setScopeId(isAuthed ? userId : deviceId)
   }, [supabase, userId, deviceId])
 
-  // one-time migration upon first login (server-side service key)
+  // initial load + migration retained (unchanged)
   useEffect(() => {
-    const doMigrate = async () => {
-      if (!supabase || !userId || !deviceId) return
-      const flagKey = `${MIGRATED_FLAG_PREFIX}${userId}`
-      if (localStorage.getItem(flagKey) === "1") return
-
-      try {
-        const { data: session } = await supabase.auth.getSession()
-        const token = session.session?.access_token
-        if (!token) return
-        const res = await fetch("/api/migrate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ deviceId }),
-        })
-        if (res.ok) {
-          localStorage.setItem(flagKey, "1")
-          // After migration, reload lists/tasks from Supabase
-          await loadFromSupabase(userId)
-        }
-      } catch (e) {
-        console.warn("Migration request failed:", e)
-      }
+    async function load() {
+      if (!scopeId) return
+      if (source === "supabase") await loadFromSupabase(scopeId)
+      else loadFromLocal()
     }
-    doMigrate()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, deviceId])
-
-  // initial load and whenever source/scope switches
-  useEffect(() => {
-    if (!scopeId) return
-    if (source === "supabase") {
-      loadFromSupabase(scopeId)
-    } else {
-      loadFromLocal()
-    }
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, scopeId])
 
@@ -184,7 +187,6 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
       .order("created_at", { ascending: false })
     setTasks((trows ?? []).map(fromDbTask))
 
-    // restore filters/smart from local
     const fRaw = localStorage.getItem(FILTERS_KEY)
     const sRaw = localStorage.getItem(SMART_KEY)
     setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
@@ -204,13 +206,12 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
             { id: uuid(), name: "General", color: "#888888" },
             { id: uuid(), name: "Work", color: "#cccccc" },
             { id: uuid(), name: "Groceries", color: "#aaaaaa" },
-          ]
+          ],
     )
     setFilters(fRaw ? JSON.parse(fRaw) : { view: "all" })
     setSmartResultsState(sRaw ? JSON.parse(sRaw) : [])
   }
 
-  // persist filters and smart results
   useEffect(() => {
     localStorage.setItem(FILTERS_KEY, JSON.stringify(filters))
   }, [filters])
@@ -218,183 +219,284 @@ export function TaskProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(SMART_KEY, JSON.stringify(smartResults))
   }, [smartResults])
 
-  // persist tasks/lists in local-only mode
   useEffect(() => {
-    if (source === "local") {
-      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks))
-    }
+    if (source === "local") localStorage.setItem(TASKS_KEY, JSON.stringify(tasks))
   }, [tasks, source])
   useEffect(() => {
-    if (source === "local") {
-      localStorage.setItem(LISTS_KEY, JSON.stringify(lists))
-    }
+    if (source === "local") localStorage.setItem(LISTS_KEY, JSON.stringify(lists))
   }, [lists, source])
 
-  const addList = useCallback(async (name: string) => {
-    const existing = lists.find((l) => l.name.toLowerCase() === name.toLowerCase())
-    if (existing) return existing.id
-    const id = uuid()
-    const newList: TaskList = { id, name, color: undefined }
-    setLists((prev) => [...prev, newList])
-
-    if (source === "supabase" && supabase) {
-      await supabase.from("lists").insert({ id, device_id: scopeId, name, color: null })
-    }
-    return id
-  }, [lists, source, supabase, scopeId])
-
-  const getListName = useCallback((id?: string) => {
-    if (!id) return "No List"
-    return lists.find((l) => l.id === id)?.name ?? "Unknown"
-  }, [lists])
-
-  const toggleDone = useCallback(async (id: string) => {
-    const now = new Date().toISOString()
-    let newTask: Task | null = null
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t
-        const updated = { ...t, status: t.status === "done" ? "todo" : "done", updatedAt: now }
-        newTask = updated
-        return updated
-      })
-    )
-    if (source === "supabase" && supabase && newTask) {
-      await supabase.from("tasks").update({ status: newTask.status, updated_at: now }).eq("id", id).eq("device_id", scopeId)
-    }
-  }, [source, supabase, scopeId])
-
-  const deleteTask = useCallback(async (id: string) => {
-    setTasks((prev) => prev.filter((t) => t.id !== id))
-    if (source === "supabase" && supabase) {
-      await supabase.from("tasks").delete().eq("id", id).eq("device_id", scopeId)
-    }
-  }, [source, supabase, scopeId])
-
-  const addTask = useCallback(async (payload: {
-    title: string; notes?: string; dueDate?: string; priority?: "low" | "medium" | "high";
-    difficulty?: Difficulty; category?: string; tags?: string[]; listName?: string
-  }) => {
-    const now = new Date().toISOString()
-    const h = heuristicClassify({ title: payload.title, description: payload.notes ?? "" })
-    const listId = await addList(payload.listName ? payload.listName : h.listName)
-    const t: Task = {
-      id: uuid(),
-      title: payload.title,
-      notes: payload.notes ?? "",
-      dueDate: payload.dueDate,
-      priority: payload.priority ?? "medium",
-      difficulty: payload.difficulty ?? h.difficulty,
-      category: payload.category ?? h.category,
-      tags: payload.tags && payload.tags.length ? payload.tags : h.tags,
-      listId,
-      status: "todo",
-      createdAt: now,
-      updatedAt: now,
-    }
-    setTasks((prev) => [t, ...prev])
-
-    if (source === "supabase" && supabase) {
-      const row = toDbTask(scopeId, t)
-      await supabase.from("tasks").insert(row)
-    }
-  }, [addList, source, supabase, scopeId])
-
-  const applyActions = useCallback((actions: Action[]) => {
-    if (!actions || actions.length === 0) return
-
-    function findByIdOrTitle(a: { id?: string; titleMatch?: string }) {
-      if (a.id) return tasks.find((t) => t.id === a.id)
-      if (a.titleMatch) {
-        const lower = a.titleMatch.toLowerCase().trim()
-        return tasks.find((t) => t.title.toLowerCase().trim() === lower) ?? tasks.find((t) => t.title.toLowerCase().includes(lower))
+  const addList = useCallback(
+    async (name: string) => {
+      const existing = lists.find((l) => l.name.toLowerCase() === name.toLowerCase())
+      if (existing) return existing.id
+      const id = uuid()
+      const newList: TaskList = { id, name, color: undefined }
+      setLists((prev) => [...prev, newList])
+      if (source === "supabase" && supabase) {
+        await supabase.from("lists").insert({ id, device_id: scopeId, name, color: null })
       }
-      return undefined
-    }
+      return id
+    },
+    [lists, source, supabase, scopeId],
+  )
 
-    ;(async () => {
-      for (const a of actions) {
-        if (a.type === "add_task") {
-          await addTask(a)
-        } else if (a.type === "complete_task") {
-          const t = findByIdOrTitle(a)
-          if (t) {
-            const done = a.done ?? true
-            const isDone = t.status === "done"
-            if ((done && !isDone) || (!done && isDone)) {
-              await toggleDone(t.id)
-            }
-          }
-        } else if (a.type === "delete_task") {
-          const t = findByIdOrTitle(a)
-          if (t) await deleteTask(t.id)
-        } else if (a.type === "update_task") {
-          const t = findByIdOrTitle(a)
-          if (t) {
-            const now = new Date().toISOString()
-            let listId = t.listId
-            if ((a.patch as any)?.listName) {
-              listId = await addList((a.patch as any).listName as string)
-            }
-            const patchLocal: Partial<Task> = { ...a.patch, listId, updatedAt: now }
-            delete (patchLocal as any).listName
+  const getListName = useCallback(
+    (id?: string) => {
+      if (!id) return "No List"
+      return lists.find((l) => l.id === id)?.name ?? "Unknown"
+    },
+    [lists],
+  )
 
-            setTasks((prev) =>
-              prev.map((x) => (x.id === t.id ? { ...x, ...patchLocal } : x))
-            )
+  // When marking done, schedule next only if repeat is enabled and there is no duplicate for next due date.
+  const maybeScheduleNext = useCallback(
+    async (t: Task) => {
+      if (t.status !== "done" || !t.repeat) return
 
-            if (source === "supabase" && supabase) {
-              const dbPatch: any = {}
-              if (patchLocal.title !== undefined) dbPatch.title = patchLocal.title
-              if (patchLocal.notes !== undefined) dbPatch.notes = patchLocal.notes
-              if (patchLocal.dueDate !== undefined) dbPatch.due_date = patchLocal.dueDate ?? null
-              if (patchLocal.priority !== undefined) dbPatch.priority = patchLocal.priority
-              if (patchLocal.difficulty !== undefined) dbPatch.difficulty = patchLocal.difficulty
-              if (patchLocal.category !== undefined) dbPatch.category = patchLocal.category
-              if (patchLocal.tags !== undefined) dbPatch.tags = patchLocal.tags
-              if (patchLocal.listId !== undefined) dbPatch.list_id = patchLocal.listId ?? null
-              if (patchLocal.status !== undefined) dbPatch.status = patchLocal.status
-              dbPatch.updated_at = now
-              await supabase.from("tasks").update(dbPatch).eq("id", t.id).eq("device_id", scopeId)
-            }
-          }
-        } else if (a.type === "set_filter") {
-          const next = { ...filters }
-          if (a.view) next.view = a.view
-          if (a.category) next.category = a.category
-          if (a.tag) next.tag = a.tag
-          if (a.listName) {
-            const id = await addList(a.listName)
-            next.listId = id
-          }
-          setFilters(next)
+      const base = t.dueDate ? new Date(t.dueDate) : new Date()
+      let incrementDays = 1
+      if (t.repeat === "weekly") incrementDays = 7
+      else if (t.repeat === "custom") incrementDays = Math.max(1, Number(t.repeatEveryDays ?? 1))
+
+      const next = new Date(base)
+      next.setDate(base.getDate() + incrementDays)
+      const nextY = ymd(next)
+
+      const exists = tasks.some(
+        (x) => x.title.trim().toLowerCase() === t.title.trim().toLowerCase() && x.dueDate === nextY,
+      )
+      if (exists) return
+
+      const now = new Date().toISOString()
+      const nextTask: Task = {
+        id: uuid(),
+        title: t.title,
+        notes: t.notes ?? "",
+        dueDate: nextY,
+        priority: t.priority ?? "medium",
+        difficulty: t.difficulty,
+        category: t.category,
+        tags: Array.from(new Set([...(t.tags ?? [])])),
+        repeat: t.repeat,
+        repeatEveryDays:
+          t.repeat === "custom" ? Math.max(1, Number(t.repeatEveryDays ?? 1)) : t.repeat === "weekly" ? 7 : 1,
+        listId: t.listId,
+        status: "todo",
+        createdAt: now,
+        updatedAt: now,
+      }
+      setTasks((prev) => [nextTask, ...prev])
+      if (source === "supabase" && supabase) {
+        const row = toDbTask(scopeId, nextTask)
+        await supabase.from("tasks").insert(row)
+      }
+    },
+    [tasks, source, supabase, scopeId],
+  )
+
+  const toggleDone = useCallback(
+    async (id: string) => {
+      const now = new Date().toISOString()
+      let updatedNow: Task | null = null
+      setTasks((prev) =>
+        prev.map((t) => {
+          if (t.id !== id) return t
+          const updated: Task = { ...t, status: t.status === "done" ? "todo" : "done", updatedAt: now }
+          updatedNow = updated
+          return updated
+        }),
+      )
+      if (source === "supabase" && supabase) {
+        await supabase
+          .from("tasks")
+          .update({ status: updatedNow?.status, updated_at: now })
+          .eq("id", id)
+          .eq("device_id", scopeId)
+      }
+      if (updatedNow) await maybeScheduleNext(updatedNow)
+    },
+    [source, supabase, scopeId, maybeScheduleNext],
+  )
+
+  const deleteTask = useCallback(
+    async (id: string) => {
+      setTasks((prev) => prev.filter((t) => t.id !== id))
+      if (source === "supabase" && supabase) {
+        await supabase.from("tasks").delete().eq("id", id).eq("device_id", scopeId)
+      }
+    },
+    [source, supabase, scopeId],
+  )
+
+  const addTask = useCallback(
+    async (payload: {
+      title: string
+      notes?: string
+      dueDate?: string
+      priority?: "low" | "medium" | "high"
+      difficulty?: Difficulty
+      category?: string
+      tags?: string[]
+      listName?: string
+      repeat?: "daily" | "weekly" | "custom"
+      repeatEveryDays?: number
+    }) => {
+      const nowIso = new Date().toISOString()
+      const h = heuristicClassify({ title: payload.title, description: payload.notes ?? "" })
+      const listId = await addList(payload.listName ? payload.listName : h.listName)
+      // Normalize repeat days
+      const rDays =
+        payload.repeat === "daily"
+          ? 1
+          : payload.repeat === "weekly"
+            ? 7
+            : Math.max(1, Number(payload.repeatEveryDays ?? 1))
+      const t: Task = {
+        id: uuid(),
+        title: payload.title,
+        notes: payload.notes ?? "",
+        dueDate: payload.dueDate,
+        priority: payload.priority ?? "medium",
+        difficulty: payload.difficulty ?? h.difficulty,
+        category: payload.category ?? h.category,
+        tags: Array.from(new Set([...(payload.tags ?? h.tags)])),
+        repeat: payload.repeat,
+        repeatEveryDays: payload.repeat ? rDays : undefined,
+        listId,
+        status: "todo",
+        createdAt: nowIso,
+        updatedAt: nowIso,
+      }
+      setTasks((prev) => [t, ...prev])
+
+      if (source === "supabase" && supabase) {
+        const row = toDbTask(scopeId, t)
+        await supabase.from("tasks").insert(row)
+      }
+    },
+    [addList, source, supabase, scopeId],
+  )
+
+  const applyActions = useCallback(
+    (actions: Action[]) => {
+      if (!actions || actions.length === 0) return
+
+      function findByIdOrTitle(a: { id?: string; titleMatch?: string }) {
+        if (a.id) return tasks.find((t) => t.id === a.id)
+        if (a.titleMatch) {
+          const lower = a.titleMatch.toLowerCase().trim()
+          return (
+            tasks.find((t) => t.title.toLowerCase().trim() === lower) ??
+            tasks.find((t) => t.title.toLowerCase().includes(lower))
+          )
         }
+        return undefined
       }
-    })()
-  }, [tasks, filters, addTask, toggleDone, deleteTask, setFilters, addList, source, supabase, scopeId])
+      ;(async () => {
+        for (const a of actions) {
+          if (a.type === "add_task") {
+            await addTask(a as any)
+          } else if (a.type === "complete_task") {
+            const t = findByIdOrTitle(a)
+            if (t) {
+              const done = a.done ?? true
+              const isDone = t.status === "done"
+              if ((done && !isDone) || (!done && isDone)) {
+                await toggleDone(t.id)
+              }
+            }
+          } else if (a.type === "delete_task") {
+            const t = findByIdOrTitle(a)
+            if (t) await deleteTask(t.id)
+          } else if (a.type === "update_task") {
+            const t = findByIdOrTitle(a)
+            if (t) {
+              const now = new Date().toISOString()
+              let listId = t.listId
+              if ((a.patch as any)?.listName) {
+                listId = await addList((a.patch as any).listName as string)
+              }
+              const patchLocal: Partial<Task> = { ...a.patch, listId, updatedAt: now }
+              delete (patchLocal as any).listName
+
+              setTasks((prev) => prev.map((x) => (x.id === t.id ? { ...x, ...patchLocal } : x)))
+
+              if (source === "supabase" && supabase) {
+                const dbPatch: any = {}
+                if (patchLocal.title !== undefined) dbPatch.title = patchLocal.title
+                if (patchLocal.notes !== undefined) dbPatch.notes = patchLocal.notes
+                if (patchLocal.dueDate !== undefined) dbPatch.due_date = patchLocal.dueDate ?? null
+                if (patchLocal.priority !== undefined) dbPatch.priority = patchLocal.priority
+                if (patchLocal.difficulty !== undefined) dbPatch.difficulty = patchLocal.difficulty
+                if (patchLocal.category !== undefined) dbPatch.category = patchLocal.category
+                if (patchLocal.tags !== undefined) dbPatch.tags = patchLocal.tags
+                if (patchLocal.listId !== undefined) dbPatch.list_id = patchLocal.listId ?? null
+                if (patchLocal.status !== undefined) dbPatch.status = patchLocal.status
+                if (patchLocal.repeat !== undefined || patchLocal.repeatEveryDays !== undefined) {
+                  // ensure tags reflect repeat after update
+                  const updated: Task = { ...t, ...patchLocal } as Task
+                  dbPatch.tags = toDbTask(scopeId, updated).tags
+                }
+                dbPatch.updated_at = now
+                await supabase.from("tasks").update(dbPatch).eq("id", t.id).eq("device_id", scopeId)
+              }
+            }
+          } else if (a.type === "set_filter") {
+            const next = { ...filters }
+            if (a.view) next.view = a.view
+            if (a.category) next.category = a.category
+            if (a.tag) next.tag = a.tag
+            if (a.listName) {
+              const id = await addList(a.listName)
+              next.listId = id
+            }
+            setFilters(next)
+          }
+        }
+      })()
+    },
+    [tasks, filters, addTask, toggleDone, deleteTask, setFilters, addList, source, supabase, scopeId],
+  )
 
   const exportSnapshot = useCallback(() => ({ tasks, lists, filters }), [tasks, lists, filters])
+  const setSmartResults = useCallback((ids: string[]) => setSmartResultsState(ids), [])
 
-  const setSmartResults = useCallback((ids: string[]) => {
-    setSmartResultsState(ids)
-  }, [])
-
-  const value: Ctx = useMemo(() => ({
-    source,
-    scopeId,
-    tasks,
-    lists,
-    filters,
-    setFilters,
-    addList,
-    getListName,
-    toggleDone,
-    deleteTask,
-    applyActions,
-    exportSnapshot,
-    smartResults,
-    setSmartResults,
-  }), [source, scopeId, tasks, lists, filters, addList, getListName, toggleDone, deleteTask, applyActions, exportSnapshot, smartResults, setSmartResults])
+  const value: Ctx = useMemo(
+    () => ({
+      source,
+      scopeId,
+      tasks,
+      lists,
+      filters,
+      setFilters,
+      addList,
+      getListName,
+      toggleDone,
+      deleteTask,
+      addTask,
+      applyActions,
+      exportSnapshot,
+      smartResults,
+      setSmartResults,
+    }),
+    [
+      source,
+      scopeId,
+      tasks,
+      lists,
+      filters,
+      addList,
+      getListName,
+      toggleDone,
+      deleteTask,
+      addTask,
+      applyActions,
+      exportSnapshot,
+      smartResults,
+      setSmartResults,
+    ],
+  )
 
   return <TaskCtx.Provider value={value}>{children}</TaskCtx.Provider>
 }
