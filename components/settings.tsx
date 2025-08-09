@@ -1,12 +1,14 @@
 "use client"
 import { useEffect, useMemo, useState } from "react"
-import { SlidersHorizontal, RefreshCw, Trash2 } from "lucide-react"
+import { SlidersHorizontal, RefreshCw, Trash2, Pencil, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { MemoryEditor } from "./memory-editor"
+import { getAuthHeaders } from "@/lib/identity"
 
 type MemoryEntry = {
   id: string
@@ -16,39 +18,6 @@ type MemoryEntry = {
   tags: string[] | null
   created_at: string
   updated_at: string
-}
-
-function ensureDeviceId() {
-  try {
-    const key = "smart_device_id"
-    let id = localStorage.getItem(key)
-    if (!id) {
-      id = (globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36).slice(2)) + "-guest"
-      localStorage.setItem(key, id)
-    }
-    return id
-  } catch {
-    return "web-guest"
-  }
-}
-
-async function makeHeaders() {
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-    "x-device-id": ensureDeviceId(),
-  }
-  try {
-    const { createClient } = await import("@supabase/supabase-js")
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    if (url && key) {
-      const sp = createClient(url, key)
-      const { data } = await sp.auth.getSession()
-      const token = data.session?.access_token
-      if (token) headers.authorization = `Bearer ${token}`
-    }
-  } catch {}
-  return headers
 }
 
 export function Settings() {
@@ -78,7 +47,7 @@ export function Settings() {
   async function loadMemory() {
     setLoading(true)
     try {
-      const headers = await makeHeaders()
+      const headers = await getAuthHeaders()
       const res = await fetch("/api/memory", { method: "GET", headers })
       if (res.ok) {
         const data = await res.json()
@@ -92,7 +61,7 @@ export function Settings() {
   }
 
   async function deleteMemory(id: string) {
-    const headers = await makeHeaders()
+    const headers = await getAuthHeaders()
     await fetch(`/api/memory?id=${encodeURIComponent(id)}`, { method: "DELETE", headers })
     setMem((arr) => arr.filter((x) => x.id !== id))
   }
@@ -151,16 +120,38 @@ export function Settings() {
               <div className="text-sm" style={{ color: "var(--secondary)" }}>
                 {loading ? "Loading…" : `${mem.length} item${mem.length === 1 ? "" : "s"}`}
               </div>
-              <Button
-                onClick={loadMemory}
-                variant="ghost"
-                className="hover:opacity-80"
-                style={{ color: "var(--brand)", background: "transparent" }}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </Button>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={loadMemory}
+                  variant="ghost"
+                  className="hover:opacity-80"
+                  style={{ color: "var(--brand)", background: "transparent" }}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+
+                <MemoryEditor
+                  mode="create"
+                  trigger={
+                    <Button
+                      className="h-8 gap-1 px-3"
+                      style={{
+                        background: "var(--brand)",
+                        color: "var(--on-brand)",
+                        borderColor: "var(--brand)",
+                      }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add memory
+                    </Button>
+                  }
+                  onSaved={() => loadMemory()}
+                />
+              </div>
             </div>
+
             <ScrollArea className="h-72 rounded-lg border bg-white" style={{ borderColor: "var(--tertiary)" }}>
               <ul className="divide-y" style={{ borderColor: "var(--tertiary)" }}>
                 {mem.map((m) => (
@@ -172,17 +163,36 @@ export function Settings() {
                       {m.content ? <div className="text-sm text-gray-600">{m.content}</div> : null}
                       <div className="mt-1 text-xs text-gray-400">
                         importance {m.importance} • {new Date(m.updated_at).toLocaleString()}
+                        {m.tags?.length ? ` • tags: ${m.tags.join(", ")}` : ""}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      onClick={() => deleteMemory(m.id)}
-                      className="hover:bg-red-50"
-                      style={{ color: "#dc2626" }}
-                      aria-label={`Delete memory ${m.title}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <div className="flex items-center gap-1">
+                      <MemoryEditor
+                        mode="edit"
+                        trigger={
+                          <Button variant="ghost" className="h-8 px-2" style={{ color: "var(--brand)" }}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        }
+                        defaultValues={{
+                          id: m.id,
+                          title: m.title,
+                          content: m.content ?? "",
+                          importance: m.importance,
+                          tags: m.tags ?? [],
+                        }}
+                        onSaved={() => loadMemory()}
+                      />
+                      <Button
+                        variant="ghost"
+                        onClick={() => deleteMemory(m.id)}
+                        className="h-8 px-2 hover:bg-red-50"
+                        style={{ color: "#dc2626" }}
+                        aria-label={`Delete memory ${m.title}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </li>
                 ))}
                 {mem.length === 0 && !loading ? (

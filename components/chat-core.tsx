@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { useTasks } from "./task-context"
 import { parseActionsFromAssistant, parseRecommendationsFromAssistant } from "@/lib/commands"
+import { getAuthHeaders } from "@/lib/identity"
 
 type Msg = { id: string; role: "user" | "assistant"; text: string }
 
@@ -57,12 +58,14 @@ export function ChatCore({ height = 300 }: Props) {
     [tasks, lists, filters],
   )
 
+  // Probe AI availability with identity headers so memory uses the same owner key.
   useEffect(() => {
     async function probe() {
       try {
+        const headers = await getAuthHeaders()
         const res = await fetch("/api/agent", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers,
           body: JSON.stringify({ history: [], taskContext }),
         })
         setAiAvailable(res.ok)
@@ -85,9 +88,10 @@ export function ChatCore({ height = 300 }: Props) {
     setIsLoading(true)
 
     try {
+      const headers = await getAuthHeaders()
       const res = await fetch("/api/agent", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           history: newHistory.map((m) => ({ role: m.role, text: m.text })),
           taskContext,

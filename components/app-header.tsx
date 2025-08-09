@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { getSupabaseClient } from "@/lib/supabase/client"
 import ThemeClient from "@/components/theme-client"
 import { Settings } from "@/components/settings"
+import { WaVerify } from "@/components/wa-verify"
 
 function AppHeader() {
   const supabase = getSupabaseClient()
@@ -54,6 +55,7 @@ function AppHeader() {
         </div>
         <div className="flex items-center gap-2">
           <Settings />
+          <WaVerify />
           {email ? (
             <Button
               onClick={signOut}

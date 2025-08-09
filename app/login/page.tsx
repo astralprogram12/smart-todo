@@ -31,22 +31,51 @@ export default function LoginPage() {
       setError("Supabase is not configured.")
       return
     }
+    const emailNorm = email.trim().toLowerCase()
+    if (!emailNorm) {
+      setError("Please enter your email.")
+      return
+    }
+
     setLoading(true)
     setError(null)
     try {
       if (mode === "signin") {
-        const { error } = await supabase.auth.signInWithPassword({ email, password })
+        const { error } = await supabase.auth.signInWithPassword({ email: emailNorm, password })
         if (error) throw error
         router.push("/")
         router.refresh()
       } else {
-        // Sign up then ask user to check email
-        const { error } = await supabase.auth.signUp({ email, password })
-        if (error) throw error
+        // Pre-check if the email already exists (server-side)
+        const resp = await fetch("/api/auth/check-email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: emailNorm }),
+        })
+        const existsData = await resp.json()
+        if (resp.ok && existsData.exists) {
+          setError("This email is already registered. Please sign in.")
+          setMode("signin")
+          return
+        }
+
+        // Proceed with Supabase sign-up
+        const { error } = await supabase.auth.signUp({ email: emailNorm, password })
+        if (error) {
+          // Handle common duplicate message from Supabase as a safeguard
+          const msg = (error.message || "").toLowerCase()
+          if (msg.includes("already registered") || msg.includes("user already exists")) {
+            setError("This email is already registered. Please sign in.")
+            setMode("signin")
+            return
+          }
+          throw error
+        }
+
         try {
-          localStorage.setItem("last_signup_email", email.trim())
+          localStorage.setItem("last_signup_email", emailNorm)
         } catch {}
-        router.push(`/check-email?email=${encodeURIComponent(email.trim())}`)
+        router.push(`/check-email?email=${encodeURIComponent(emailNorm)}`)
       }
     } catch (err: any) {
       setError(err?.message || "An error occurred")
@@ -76,7 +105,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => setEmail(e.target.value.toLowerCase())}
                   className="bg-white placeholder:text-gray-400"
                   placeholder="you@example.com"
                 />
