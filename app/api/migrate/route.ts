@@ -39,29 +39,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ migrated: false, reason: "User ID is the same as Device ID; nothing to migrate." })
     }
 
-    // --- Core Logic Change ---
-    // Instead of updating device_id, we now set the user_id on tasks
-    // that were previously associated with the temporary deviceId.
+    console.log(`Attempting to migrate tasks from deviceId: ${deviceId} to userId: ${userId}`)
 
-    console.log(`Migrating data from deviceId: ${deviceId} to userId: ${userId}`)
-
-    // We no longer need to migrate 'lists', as it seems to be deprecated.
-    // We focus only on the 'tasks' table.
-
+    // --- The Core Migration Logic ---
     const { error: tasksMigrationError } = await supabaseAdmin
       .from("tasks")
-      // Set the permanent user_id for the tasks.
+      // 1. Set the permanent user_id for the found tasks.
       .update({ user_id: userId })
-      // Find all tasks that belonged to the temporary deviceId.
+      // 2. Find all tasks that belonged to the temporary deviceId.
       .eq("device_id", deviceId)
+      // 3. IMPORTANT: Only update tasks that don't already have a user.
+      .is("user_id", null)
 
     if (tasksMigrationError) {
       console.error("Task migration failed:", tasksMigrationError)
       return NextResponse.json({ error: "Failed to migrate tasks", details: tasksMigrationError.message }, { status: 500 })
     }
-
-    // After successfully migrating, we can optionally clean up the device_id column if it's no longer needed
-    // for anonymous users, but for now we'll leave it.
 
     console.log(`Successfully migrated tasks for user: ${userId}`)
     return NextResponse.json({ migrated: true })
