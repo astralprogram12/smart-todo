@@ -1,5 +1,6 @@
 import type { Task, TaskList } from "@/components/task-context"
 
+// --- Helper functions for repeat tags (Unchanged) ---
 function parseRepeatFromTags(tags: string[] | null | undefined): {
   repeat?: Task["repeat"]
   repeatEveryDays?: number
@@ -8,7 +9,6 @@ function parseRepeatFromTags(tags: string[] | null | undefined): {
   if (tags.includes("repeat:daily")) return { repeat: "daily", repeatEveryDays: 1 }
   if (tags.includes("repeat:weekly")) return { repeat: "weekly", repeatEveryDays: 7 }
   const custom = (tags.find((t) => t.startsWith("repeat:every:")) ?? "").split(":")
-  // formats: repeat:every:days:3 or repeat:every:weeks:2
   if (custom.length === 4 && custom[0] === "repeat" && custom[1] === "every") {
     const unit = custom[2]
     const n = Number(custom[3])
@@ -35,12 +35,16 @@ function toRepeatTag(t: Pick<Task, "repeat" | "repeatEveryDays">): string | null
   return null
 }
 
+// --- MODIFIED Database Type Definitions ---
+
+// This now includes our new schema with a nullable user_id and device_id.
 export type DbTask = {
   id: string
-  device_id: string
+  user_id: string | null // Can be null for anonymous tasks
+  device_id: string | null // Can be null for authenticated user tasks
   title: string
   notes: string | null
-  due_date: string | null // YYYY-MM-DD
+  due_date: string | null
   priority: "low" | "medium" | "high" | null
   difficulty: "easy" | "medium" | "hard" | null
   category: string | null
@@ -51,6 +55,7 @@ export type DbTask = {
   updated_at: string
 }
 
+// DbList remains the same for now, as we haven't modified that table yet.
 export type DbList = {
   id: string
   device_id: string
@@ -58,6 +63,9 @@ export type DbList = {
   color: string | null
   created_at: string
 }
+
+
+// --- MODIFIED Data Transformation Functions ---
 
 export function fromDbTask(row: DbTask): Task {
   const { repeat, repeatEveryDays } = parseRepeatFromTags(row.tags)
@@ -79,13 +87,15 @@ export function fromDbTask(row: DbTask): Task {
   }
 }
 
-export function toDbTask(deviceId: string, t: Task): DbTask {
+// THIS IS THE MOST IMPORTANT CHANGE
+export function toDbTask(scopeId: string, t: Task, source: "local" | "supabase"): Partial<DbTask> {
   const clean = withoutRepeatTags(t.tags)
   const rtag = toRepeatTag(t)
   const tags = rtag ? Array.from(new Set([...clean, rtag])) : clean
-  return {
+  
+  // Base object with common fields
+  const baseTask = {
     id: t.id,
-    device_id: deviceId,
     title: t.title,
     notes: t.notes ?? null,
     due_date: t.dueDate ?? null,
@@ -98,8 +108,18 @@ export function toDbTask(deviceId: string, t: Task): DbTask {
     created_at: t.createdAt,
     updated_at: t.updatedAt,
   }
+
+  // Conditionally add user_id or device_id based on the source
+  if (source === 'supabase') {
+    // If user is authenticated, scopeId is the userId
+    return { ...baseTask, user_id: scopeId, device_id: null }
+  } else {
+    // If user is anonymous, scopeId is the deviceId
+    return { ...baseTask, user_id: null, device_id: scopeId }
+  }
 }
 
+// fromDbList remains unchanged.
 export function fromDbList(row: DbList): TaskList {
   return {
     id: row.id,
