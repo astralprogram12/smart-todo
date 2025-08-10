@@ -1,40 +1,55 @@
-import { NextResponse } from "next/server"
+import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function POST(req: Request) {
   try {
     const { email } = await req.json()
-    const e = String(email ?? "")
-      .trim()
-      .toLowerCase()
-    if (!e) return NextResponse.json({ error: "Missing email" }, { status: 400 })
+    const normalizedEmail = String(email ?? "").trim().toLowerCase()
 
-    const url = process.env.SUPABASE_URL
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !key) {
-      return NextResponse.json({ error: "Server not configured" }, { status: 500 })
+    if (!normalizedEmail) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
     }
 
-    // Supabase Admin API: list users filtered by email
-    const res = await fetch(`${url}/auth/v1/admin/users?email=${encodeURIComponent(e)}`, {
-      headers: {
-        apikey: key,
-        authorization: `Bearer ${key}`,
-        accept: "application/json",
-      },
-      cache: "no-store",
-    })
+    const supabaseUrl = process.env.SUPABASE_URL
+    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!res.ok) {
-      const text = await res.text()
-      return NextResponse.json({ error: "Admin API failed", details: text }, { status: 502 })
+    if (!supabaseUrl || !serviceKey) {
+        console.error("Server configuration error: Supabase URL or Service Key is missing.")
+        return NextResponse.json({ error: "Server not configured" }, { status: 500 })
     }
 
-    const raw = await res.json()
-    // Handle both shapes: either an array or { users: [...] }
-    const users = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : []
-    const exists = users.length > 0
-    return NextResponse.json({ exists })
+    // Initialize the Admin client
+    const supabaseAdmin = createClient(
+      supabaseUrl,
+      serviceKey,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    // THE CORRECT METHOD: Use the admin auth function to look up a user by email.
+    const { data, error } = await supabaseAdmin.auth.admin.getUserByEmail(normalizedEmail)
+
+    // This is the crucial part: if there's an error, we need to check its message.
+    if (error) {
+      // A "User not found" error is the SUCCESS case for this endpoint. It means the email is available.
+      if (error.message.toLowerCase().includes('user not found')) {
+        return NextResponse.json({ exists: false })
+      }
+      
+      // For any other unexpected errors, log them and return a server error.
+      console.error("Supabase admin error checking email:", error.message)
+      return NextResponse.json({ error: 'An internal server error occurred' }, { status: 500 })
+    }
+
+    // If there was NO error and we received data, it means the user exists.
+    if (data?.user) {
+      return NextResponse.json({ exists: true })
+    }
+
+    // As a final fallback, if there was no error and no data, the user doesn't exist.
+    return NextResponse.json({ exists: false })
+
   } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "Unknown error" }, { status: 500 })
+    console.error("Catch block error:", e.message)
+    return NextResponse.json({ error: e.message || 'An unknown error occurred' }, { status: 500 })
   }
 }
