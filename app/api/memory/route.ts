@@ -1,70 +1,65 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { createClient, SupabaseClient } from "@supabase/supabase-js"
 
-function getAdmin() {
+// Helper to create the admin client
+function getAdminClient(): SupabaseClient | null {
   const url = process.env.SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) return null
   return createClient(url, key, { auth: { persistSession: false, autoRefreshToken: false } })
 }
 
-async function resolveOwner(req: NextRequest, admin: ReturnType<typeof createClient>) {
-  const authHeader = req.headers.get("authorization") || ""
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null
-  if (token) {
+// MODIFIED: This function now ONLY resolves authenticated users.
+// It no longer falls back to deviceId or web-guest.
+async function resolveAuthenticatedUser(req: NextRequest, admin: SupabaseClient): Promise<string | null> {
+  const authHeader = req.headers.get("authorization")
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7)
     try {
       const { data, error } = await admin.auth.getUser(token)
       if (!error && data.user) return data.user.id
     } catch {
-      // fall through
+      // Invalid token, fall through to return null
     }
   }
-  const device = req.headers.get("x-device-id")
-  if (device) return device
-  return "web-guest"
+  return null
 }
 
 export async function GET(req: NextRequest) {
-  const admin = getAdmin()
+  const admin = getAdminClient()
   if (!admin) return NextResponse.json({ error: "Server not configured" }, { status: 503 })
-  const owner = await resolveOwner(req, admin)
-
-  let items: any[] = []
-  {
-    const { data, error } = await admin
-      .from("memory_entries")
-      .select("*")
-      .eq("owner_key", owner)
-      .order("updated_at", { ascending: false })
-      .limit(200)
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    items = data ?? []
+  
+  const userId = await resolveAuthenticatedUser(req, admin)
+  if (!userId) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
   }
 
-  // Fallback: if nothing for this owner (common when earlier agent calls saved under 'web-guest'),
-  // show legacy 'web-guest' items to avoid confusion.
-  if (items.length === 0 && owner !== "web-guest") {
-    const { data } = await admin
-      .from("memory_entries")
-      .select("*")
-      .eq("owner_key", "web-guest")
-      .order("updated_at", { ascending: false })
-      .limit(200)
-    items = data ?? []
-  }
-
-  return NextResponse.json({ items })
+  // Fetch all memory entries for the authenticated user
+  const { data, error } = await admin
+    .from("memory_entries")
+    .select("*")
+    // CHANGED: Use 'user_id' instead of 'owner_key'
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false })
+    .limit(200)
+    
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ items: data ?? [] })
 }
 
 export async function POST(req: NextRequest) {
-  const admin = getAdmin()
+  const admin = getAdminClient()
   if (!admin) return NextResponse.json({ error: "Server not configured" }, { status: 503 })
-  const owner = await resolveOwner(req, admin)
-  if (!owner) return NextResponse.json({ error: "Missing identity" }, { status: 400 })
+  
+  const userId = await resolveAuthenticatedUser(req, admin)
+  if (!userId) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+  }
 
   const body = await req.json()
   const payload = {
-    owner_key: owner,
+    // CHANGED: Use 'user_id' instead of 'owner_key'
+    user_id: userId,
     title: String(body.title ?? "Note"),
     content: body.content ? String(body.content) : null,
     importance: Number.isFinite(body.importance) ? Math.max(0, Math.min(10, Number(body.importance))) : 1,
@@ -77,9 +72,14 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const admin = getAdmin()
+  const admin = getAdminClient()
   if (!admin) return NextResponse.json({ error: "Server not configured" }, { status: 503 })
-  const owner = await resolveOwner(req, admin)
+
+  const userId = await resolveAuthenticatedUser(req, admin)
+  if (!userId) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+  }
+  
   const body = await req.json()
   const id = String(body.id ?? "")
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
@@ -90,11 +90,13 @@ export async function PUT(req: NextRequest) {
   if (body.importance !== undefined) patch.importance = Math.max(0, Math.min(10, Number(body.importance)))
   if (body.tags !== undefined) patch.tags = Array.isArray(body.tags) ? body.tags.map(String) : []
 
+  // Update the specified memory entry, ensuring it belongs to the authenticated user
   const { data, error } = await admin
     .from("memory_entries")
     .update(patch)
     .eq("id", id)
-    .eq("owner_key", owner)
+    // CHANGED: Use 'user_id' for security check
+    .eq("user_id", userId)
     .select("*")
     .single()
 
@@ -103,14 +105,26 @@ export async function PUT(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const admin = getAdmin()
+  const admin = getAdminClient()
   if (!admin) return NextResponse.json({ error: "Server not configured" }, { status: 503 })
-  const owner = await resolveOwner(req, admin)
+
+  const userId = await resolveAuthenticatedUser(req, admin)
+  if (!userId) {
+    return NextResponse.json({ error: "Authentication required" }, { status: 401 })
+  }
+  
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
 
-  const { error } = await admin.from("memory_entries").delete().eq("id", id).eq("owner_key", owner)
+  // Delete the specified memory entry, ensuring it belongs to the authenticated user
+  const { error } = await admin
+    .from("memory_entries")
+    .delete()
+    .eq("id", id)
+    // CHANGED: Use 'user_id' for security check
+    .eq("user_id", userId)
+    
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ ok: true })
 }
