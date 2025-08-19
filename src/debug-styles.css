@@ -1,0 +1,40 @@
+/* Debug Panel Styles */
+.transition-height {
+  transition-property: height;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+/* Log level background colors */
+.log-info-bg {
+  background-color: #eff6ff;
+}
+
+.log-error-bg {
+  background-color: #fef2f2;
+}
+
+.log-warning-bg {
+  background-color: #fffbeb;
+}
+
+.log-success-bg {
+  background-color: #f0fdf4;
+}
+
+/* Log level text colors */
+.log-info-text {
+  color: #1e40af;
+}
+
+.log-error-text {
+  color: #b91c1c;
+}
+
+.log-warning-text {
+  color: #92400e;
+}
+
+.log-success-text {
+  color: #166534;
+}

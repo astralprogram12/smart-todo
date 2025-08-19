@@ -1,6 +1,0 @@
--- Optional: seed some lists for a known device id (replace :device_id)
--- select gen_random_uuid(); -- or pass ids from the client
--- insert into public.lists (id, device_id, name, color) values
---   ('00000000-0000-0000-0000-000000000001', ':device_id', 'General', '#888888'),
---   ('00000000-0000-0000-0000-000000000002', ':device_id', 'Work', '#cccccc'),
---   ('00000000-0000-0000-0000-000000000003', ':device_id', 'Groceries', '#aaaaaa');

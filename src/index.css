@@ -1,0 +1,256 @@
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import '@fontsource/inter';
+@import '@fontsource/manrope';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Nenrin brand colors */
+  --nenrin-forest: #1f5e42;
+  --nenrin-sprout: #60c689;
+  --nenrin-bark: #3a2e2a;
+  --nenrin-mist: #f4f6f5;
+  --nenrin-ink: #0e0f10;
+  --nenrin-white: #ffffff;
+  --nenrin-sage: #6b7280;
+  --nenrin-cream: #fefefe;
+
+  --forest-hover: #1b523a;
+  --forest-active: #184933;
+  --sprout-hover: #54ae78;
+  --sprout-active: #4a9a6a;
+
+  /* Default Tailwind CSS variables */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+}
+
+/* Dark mode variables */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+}
+
+@theme inline {
+  --font-heading: 'Manrope', sans-serif;
+  --font-body: 'Inter', sans-serif;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+
+  /* Nenrin typography styles */
+  h1 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 40px;
+    letter-spacing: 0.02em;
+  }
+  h2 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 30px;
+  }
+  h3 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 22px;
+  }
+  h4 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 18px;
+  }
+
+  .small-ui {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  /* Phone Input Styling */
+  .PhoneInput {
+    display: flex;
+    align-items: center;
+  }
+
+  .PhoneInputInput {
+    flex: 1;
+    min-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--nenrin-mist);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    font-family: var(--font-body);
+    color: var(--nenrin-ink);
+    background-color: white;
+    transition: all 0.2s ease;
+  }
+
+  .PhoneInputInput:focus {
+    outline: none;
+    border-color: var(--nenrin-forest);
+    box-shadow: 0 0 0 2px rgba(31, 94, 66, 0.1);
+  }
+
+  .PhoneInputInput::placeholder {
+    color: var(--nenrin-sage);
+  }
+
+  .PhoneInputCountrySelect {
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid var(--nenrin-mist);
+    border-radius: 0.5rem;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .PhoneInputCountrySelect:focus {
+    outline: none;
+    border-color: var(--nenrin-forest);
+    box-shadow: 0 0 0 2px rgba(31, 94, 66, 0.1);
+  }
+
+  .PhoneInputCountrySelectArrow {
+    margin-left: 0.25rem;
+    opacity: 0.5;
+  }
+
+  /* Hero section concentric rings background */
+  .hero-rings {
+    position: relative;
+  }
+
+  .hero-rings::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 20% 80%, rgba(58, 46, 42, 0.08) 1px, transparent 1px),
+      radial-gradient(circle at 20% 80%, rgba(58, 46, 42, 0.06) 150px, transparent 150px),
+      radial-gradient(circle at 20% 80%, rgba(58, 46, 42, 0.05) 300px, transparent 300px),
+      radial-gradient(circle at 20% 80%, rgba(58, 46, 42, 0.04) 450px, transparent 450px),
+      radial-gradient(circle at 20% 80%, rgba(58, 46, 42, 0.03) 600px, transparent 600px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Pricing section concentric rings background */
+  .pricing-rings {
+    position: relative;
+    background-color: var(--nenrin-mist);
+  }
+
+  .pricing-rings::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 80% 30%, rgba(31, 94, 66, 0.05) 1px, transparent 1px),
+      radial-gradient(circle at 80% 30%, rgba(31, 94, 66, 0.04) 180px, transparent 180px),
+      radial-gradient(circle at 80% 30%, rgba(31, 94, 66, 0.03) 360px, transparent 360px),
+      radial-gradient(circle at 80% 30%, rgba(31, 94, 66, 0.03) 540px, transparent 540px),
+      radial-gradient(circle at 80% 30%, rgba(31, 94, 66, 0.02) 720px, transparent 720px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Auth pages concentric rings background */
+  .auth-rings {
+    position: relative;
+    background: linear-gradient(135deg, var(--nenrin-mist) 0%, rgba(244, 246, 245, 0.8) 100%);
+    min-height: 100vh;
+  }
+
+  .auth-rings::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: radial-gradient(circle at 30% 70%, rgba(31, 94, 66, 0.06) 1px, transparent 1px),
+      radial-gradient(circle at 30% 70%, rgba(31, 94, 66, 0.05) 200px, transparent 200px),
+      radial-gradient(circle at 30% 70%, rgba(31, 94, 66, 0.04) 400px, transparent 400px),
+      radial-gradient(circle at 70% 30%, rgba(58, 46, 42, 0.04) 1px, transparent 1px),
+      radial-gradient(circle at 70% 30%, rgba(58, 46, 42, 0.03) 250px, transparent 250px),
+      radial-gradient(circle at 70% 30%, rgba(58, 46, 42, 0.02) 500px, transparent 500px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Phone Input Styling */
+  .phone-input .PhoneInputInput {
+    border: 1px solid #f4f6f5;
+    border-radius: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background-color: white;
+  }
+
+  .phone-input .PhoneInputInput:focus {
+    outline: none;
+    border-color: var(--nenrin-forest);
+    box-shadow: 0 0 0 2px rgba(31, 94, 66, 0.1);
+  }
+
+  .phone-input .PhoneInputCountrySelect {
+    border: 1px solid #f4f6f5;
+    border-radius: 0.5rem;
+    margin-right: 0.5rem;
+    padding: 0.5rem;
+    background-color: white;
+    transition: border-color 0.2s;
+  }
+
+  .phone-input .PhoneInputCountrySelect:focus {
+    outline: none;
+    border-color: var(--nenrin-forest);
+  }
+
+  .phone-input .PhoneInputCountrySelectArrow {
+    color: var(--nenrin-sage);
+  }
+
+  .phone-input .PhoneInputCountryIcon {
+    margin-right: 0.5rem;
+  }
+}
