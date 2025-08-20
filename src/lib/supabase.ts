@@ -1,8 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables from Vite
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL!
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY!
+// Get environment variables from Vite with fallbacks for frontend-only deployment
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder_anon_key'
+
+// Check if we're in frontend-only mode
+const isFrontendOnly = supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')
+
+if (isFrontendOnly) {
+  console.log('Running in frontend-only mode - Supabase features disabled')
+}
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -24,6 +31,14 @@ export const whatsappAuth = {
   
   // Send OTP code via WhatsApp
   sendOTP: async (phone: string) => {
+    if (isFrontendOnly) {
+      console.log('Frontend-only mode: Simulating OTP send for', phone)
+      return {
+        data: { success: true, message: 'Demo mode: OTP would be sent to WhatsApp' },
+        error: null
+      }
+    }
+    
     try {
       const response = await supabase.functions.invoke('whatsapp-auth-send-otp', {
         body: { 
@@ -41,6 +56,19 @@ export const whatsappAuth = {
   
   // Send OTP code via simplified WhatsApp function with smart 10-minute rate limiting
   sendSimplifiedOTP: async (phone: string, demoMode = false, signupMode = false) => {
+    if (isFrontendOnly) {
+      console.log('Frontend-only mode: Simulating simplified OTP send for', phone)
+      return {
+        data: {
+          success: true,
+          message: 'Demo mode: OTP would be sent to WhatsApp',
+          userMessage: 'Demo: Verification code would be sent to your WhatsApp number',
+          used_existing_otp: false
+        },
+        error: null
+      }
+    }
+    
     try {
       console.log('Sending simplified OTP to:', phone, '(Demo mode:', demoMode, ', Signup mode:', signupMode, ')')
       
@@ -88,6 +116,21 @@ export const whatsappAuth = {
   
   // Verify OTP code and authenticate user
   verifyOTP: async (phone: string, code: string, signupMode = false) => {
+    if (isFrontendOnly) {
+      console.log('Frontend-only mode: Simulating OTP verification for', phone)
+      // Simulate successful verification
+      return {
+        data: {
+          success: true,
+          message: 'Demo mode: OTP verification successful',
+          user: { phone, id: 'demo-user-id' },
+          is_first_login: true,
+          is_new_user: signupMode
+        },
+        error: null
+      }
+    }
+    
     try {
       console.log('Verifying OTP:', { phone, code, testMode: whatsappAuth._testMode, signupMode })
       
@@ -157,6 +200,21 @@ export const whatsappAuth = {
   
   // Verify OTP code using simplified function
   verifySimplifiedOTP: async (phone: string, code: string, skipVerification = false, signupMode = false) => {
+    if (isFrontendOnly) {
+      console.log('Frontend-only mode: Simulating simplified OTP verification for', phone)
+      // Simulate successful verification
+      return {
+        data: {
+          success: true,
+          message: 'Demo mode: OTP verification successful',
+          user: { phone, id: 'demo-user-id' },
+          is_first_login: true,
+          is_new_user: signupMode
+        },
+        error: null
+      }
+    }
+    
     try {
       console.log('Verifying simplified OTP:', { 
         phone, 
