@@ -619,9 +619,9 @@ function Home() {
             phrase: "summarize my tasks every day at 6am", 
             icon: <Icon.Check/>,
             similar: [
-                "What are my tasks for today?",
-                "Give me a rundown of my schedule this morning.",
-                "Summarize my tasks daily at sunrise."
+                "What's on my plate for today?",
+                "Can you give me the morning highlights?",
+                "I'm starting my day, what should I focus on?"
             ]
         },
         { 
@@ -629,9 +629,9 @@ function Home() {
             phrase: "run every Sunday at 7am", 
             icon: <Icon.Timer/>,
             similar: [
-                "Remind me to go for a run every Sunday morning.",
-                "Add a recurring task: run at 7am on Sundays.",
-                "I want to start running on Sunday mornings."
+                "Help me stick to a running schedule every Sunday morning.",
+                "I want to start a new weekly routine: running.",
+                "Let's make sure I go for a run every Sunday."
             ]
         },
         { 
@@ -639,9 +639,9 @@ function Home() {
             phrase: "remind me to call mom at 6pm today", 
             icon: <Icon.Bell/>,
             similar: [
-                "Don't let me forget to call my mom this evening.",
-                "Set a reminder for 6pm: call mom.",
-                "I need to call my mom later today."
+                "Ping me at 6pm so I don't forget to call my mom.",
+                "I have to call my mom after work today.",
+                "Later today, 6pm, call mom."
             ]
         },
         { 
@@ -649,9 +649,9 @@ function Home() {
             phrase: "don't reply to my message for an hour", 
             icon: <Icon.Bell/>,
             similar: [
-                "I need an hour of deep work, please don't disturb me.",
-                "Activate silent mode for 60 minutes.",
-                "Pause notifications for an hour."
+                "I need to go into a deep work cave for the next hour.",
+                "Activate focus mode for 60 minutes.",
+                "Going offline for a bit. Please hold my messages."
             ]
         },
         { 
@@ -659,9 +659,9 @@ function Home() {
             phrase: "Today I learned that elephants have incredible memories.", 
             icon: <Icon.Check/>,
             similar: [
-                "Take a note: elephants have great memories.",
-                "Save this to my journal: elephants don't forget.",
-                "I want to remember that elephants have incredible memories."
+                "File this away: elephants have powerful memories.",
+                "A quick thought for my journal: the memory of an elephant is amazing.",
+                "Capture this idea - elephants don't forget."
             ]
         },
         { 
@@ -669,9 +669,9 @@ function Home() {
             phrase: "From now on, always sign off with my name, [Your Name].", 
             icon: <Icon.Check/>,
             similar: [
-                "Please call me [Your Name] from now on.",
-                "Remember my name is [Your Name].",
-                "Let's be more formal, please use my name."
+                "Update my profile, you can call me [Your Name].",
+                "Let's be on a first-name basis.",
+                "I'd prefer if you used my name."
             ]
         },
     ];
