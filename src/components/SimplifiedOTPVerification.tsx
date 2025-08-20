@@ -12,7 +12,7 @@ interface OTPVerificationProps {
   initialTestCode?: string | null
 }
 
-export function SimplifiedOTPVerification({ phone, onVerified, onBack, initialTestCode, isSignup }: OTPVerificationProps & { isSignup?: boolean }) {
+export function SimplifiedOTPVerification({ phone, onVerified, onBack, initialTestCode: _, isSignup }: OTPVerificationProps & { isSignup?: boolean }) {
   const [otp, setOtp] = useState(['', '', '', '', '', ''])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -22,7 +22,7 @@ export function SimplifiedOTPVerification({ phone, onVerified, onBack, initialTe
   const [attempts, setAttempts] = useState(0)
   const [maxAttempts] = useState(5) // Maximum allowed attempts
   const [resendLoading, setResendLoading] = useState(false)
-  const [skipVerification, setSkipVerification] = useState(false)
+  const [skipVerification] = useState(false)
   
   const { sendSimplifiedWhatsAppOTP, verifySimplifiedWhatsAppOTP } = useAuth()
 
@@ -138,7 +138,6 @@ export function SimplifiedOTPVerification({ phone, onVerified, onBack, initialTe
         setError(error.message || 'Failed to resend code')
       } else if (data?.success) {
         // Display smart rate limiting message
-        const userMessage = data.userMessage || data.message
         const usedExisting = data.used_existing_otp
         const otpAge = data.otp_age_minutes
         

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, ChevronDown, ChevronUp, Code, FileWarning, CheckCircle2, Timer, AlertTriangle, Info } from 'lucide-react'
+import { X, ChevronDown, ChevronUp, Code, FileWarning, CheckCircle2, AlertTriangle, Info } from 'lucide-react'
 
 interface DebugEntry {
   id: string
@@ -59,12 +59,13 @@ export function DebugPanel({ visible, onClose }: DebugPanelProps) {
     const originalXHROpen = XMLHttpRequest.prototype.open
     const originalXHRSend = XMLHttpRequest.prototype.send
     
-    XMLHttpRequest.prototype.open = function(method, url, ...rest) {
-      this._debugMethod = method
-      this._debugUrl = url
-      this._debugStartTime = Date.now()
-      return originalXHROpen.apply(this, [method, url, ...rest])
-    }
+    XMLHttpRequest.prototype.open = function(method: string, url: string | URL, async?: boolean, username?: string | null, password?: string | null) {
+      const self = this as any;
+      self._debugMethod = method;
+      self._debugUrl = url;
+      self._debugStartTime = Date.now();
+      return originalXHROpen.apply(this, arguments as any);
+    };
     
     XMLHttpRequest.prototype.send = function(body) {
       const xhr = this
@@ -72,9 +73,9 @@ export function DebugPanel({ visible, onClose }: DebugPanelProps) {
       
       const requestData = {
         id: requestId,
-        method: xhr._debugMethod,
-        url: xhr._debugUrl,
-        startTime: xhr._debugStartTime,
+        method: (xhr as any)._debugMethod,
+        url: (xhr as any)._debugUrl,
+        startTime: (xhr as any)._debugStartTime,
         body: body ? formatLogArg(body) : null,
         status: null,
         responseTime: null,
@@ -85,7 +86,7 @@ export function DebugPanel({ visible, onClose }: DebugPanelProps) {
       setNetworkRequests(prev => [...prev, requestData])
       
       xhr.addEventListener('load', function() {
-        const responseTime = Date.now() - xhr._debugStartTime
+        const responseTime = Date.now() - (xhr as any)._debugStartTime
         let responseData = null
         
         try {
