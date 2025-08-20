@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Get environment variables from Vite with fallbacks for frontend-only deployment
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder_anon_key'
+const supabaseUrl = import.meta.env.SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY || 'placeholder_anon_key'
 
 // Check if we're in frontend-only mode
 const isFrontendOnly = supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')
