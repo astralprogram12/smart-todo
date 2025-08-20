@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 /**
  * Nenrin — First Dashboard (Functionless, WhatsApp Guide)
@@ -539,42 +539,155 @@ const Icon = {
 // ----------------- Helpers -----------------
 const waLink = (text: string) => `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 
-function SuggestionCard({ title, phrase, icon }: { title: string; phrase: string; icon: React.ReactNode }){
-  return (
-    <a 
-      href={waLink(phrase)} 
-      target="_blank" 
-      rel="noreferrer noopener" 
-      aria-label={`Select suggestion: ${title}`} 
-      className="card suggestion-card block focusable rounded-2xl grid-item group"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <h3 className="nenrin-font-heading text-[19px] font-[600] tracking-[.01em] mb-2 text-nenrin-ink group-hover:text-nenrin-forest transition-colors duration-300">
-            {title}
-          </h3>
-          <p className="nenrin-font-body text-[15px] text-nenrin-text-light leading-relaxed mb-3">
-            "{phrase}"
-          </p>
-          {/* Visual indicator */}
-          <div className="flex items-center gap-2 opacity-50 group-hover:opacity-80 transition-all duration-300">
-            <div className="w-3 h-3 rounded-full bg-gradient-to-r from-nenrin-sprout to-nenrin-forest opacity-60"/>
-            <div className="w-2 h-2 rounded-full bg-gradient-to-r from-nenrin-forest to-nenrin-gold opacity-40"/>
-            <div className="w-1.5 h-1.5 rounded-full bg-nenrin-sage opacity-50"/>
+function SuggestionCard({ title, phrase, icon, onClick }: { title: string; phrase: string; icon: React.ReactNode; onClick: () => void }){
+    return (
+      <div 
+        onClick={onClick}
+        aria-label={`Select suggestion: ${title}`} 
+        className="card suggestion-card block focusable rounded-2xl grid-item group cursor-pointer"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="nenrin-font-heading text-[19px] font-[600] tracking-[.01em] mb-2 text-nenrin-ink group-hover:text-nenrin-forest transition-colors duration-300">
+              {title}
+            </h3>
+            <p className="nenrin-font-body text-[15px] text-nenrin-text-light leading-relaxed mb-3">
+              "{phrase}"
+            </p>
+            {/* Visual indicator */}
+            <div className="flex items-center gap-2 opacity-50 group-hover:opacity-80 transition-all duration-300">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-r from-nenrin-sprout to-nenrin-forest opacity-60"/>
+              <div className="w-2 h-2 rounded-full bg-gradient-to-r from-nenrin-forest to-nenrin-gold opacity-40"/>
+              <div className="w-1.5 h-1.5 rounded-full bg-nenrin-sage opacity-50"/>
+            </div>
           </div>
+          <span className="text-nenrin-forest pt-1 card-icon">{icon}</span>
         </div>
-        <span className="text-nenrin-forest pt-1 card-icon">{icon}</span>
+        {/* Hover accent line */}
+        <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-nenrin-sprout via-nenrin-forest to-nenrin-gold opacity-0 group-hover:opacity-40 transition-all duration-500 rounded-full"/>
       </div>
-      {/* Hover accent line */}
-      <div className="absolute bottom-0 left-4 right-4 h-0.5 bg-gradient-to-r from-nenrin-sprout via-nenrin-forest to-nenrin-gold opacity-0 group-hover:opacity-40 transition-all duration-500 rounded-full"/>
-    </a>
-  );
-}
+    );
+  }
+
+// ----------------- Modal -----------------
+function SimilarExpressionsModal({ isOpen, onClose, suggestion }) {
+    if (!isOpen) return null;
+  
+    return (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4 animate-fadeInScale"
+        onClick={onClose}
+      >
+        <div 
+          className="card max-w-lg w-full"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-start">
+            <h2 className="nenrin-font-heading text-2xl font-bold mb-4 text-nenrin-forest">{suggestion.title}</h2>
+            <button onClick={onClose} className="text-2xl text-nenrin-text-light">&times;</button>
+          </div>
+          
+          <p className="nenrin-font-body text-nenrin-text-light mb-6">Here are a few other ways you could phrase this:</p>
+  
+          <ul className="space-y-3">
+            {suggestion.similar.map((phrase, index) => (
+              <li key={index}>
+                <a 
+                  href={waLink(phrase)} 
+                  target="_blank" 
+                  rel="noreferrer noopener"
+                  className="block p-4 rounded-lg bg-nenrin-mist hover:bg-opacity-80 transition-all duration-300"
+                >
+                  <p className="nenrin-font-body text-nenrin-ink">"{phrase}"</p>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
 // ----------------- Home Content -----------------
 function Home() {
+    const [modalIsOpen, setModalIsOpen] = useState(false);
+    const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+
+    const suggestions = [
+        { 
+            title: "Greet the Sun", 
+            phrase: "summarize my tasks every day at 6am", 
+            icon: <Icon.Check/>,
+            similar: [
+                "What are my tasks for today?",
+                "Give me a rundown of my schedule this morning.",
+                "Summarize my tasks daily at sunrise."
+            ]
+        },
+        { 
+            title: "Root a New Habit", 
+            phrase: "run every Sunday at 7am", 
+            icon: <Icon.Timer/>,
+            similar: [
+                "Remind me to go for a run every Sunday morning.",
+                "Add a recurring task: run at 7am on Sundays.",
+                "I want to start running on Sunday mornings."
+            ]
+        },
+        { 
+            title: "A Gentle Nudge", 
+            phrase: "remind me to call mom at 6pm today", 
+            icon: <Icon.Bell/>,
+            similar: [
+                "Don't let me forget to call my mom this evening.",
+                "Set a reminder for 6pm: call mom.",
+                "I need to call my mom later today."
+            ]
+        },
+        { 
+            title: "Find Your Clearing", 
+            phrase: "don't reply to my message for an hour", 
+            icon: <Icon.Bell/>,
+            similar: [
+                "I need an hour of deep work, please don't disturb me.",
+                "Activate silent mode for 60 minutes.",
+                "Pause notifications for an hour."
+            ]
+        },
+        { 
+            title: "Jot Down a Thought", 
+            phrase: "Today I learned that elephants have incredible memories.", 
+            icon: <Icon.Check/>,
+            similar: [
+                "Take a note: elephants have great memories.",
+                "Save this to my journal: elephants don't forget.",
+                "I want to remember that elephants have incredible memories."
+            ]
+        },
+        { 
+            title: "Personalize Your Assistant", 
+            phrase: "From now on, always sign off with my name, [Your Name].", 
+            icon: <Icon.Check/>,
+            similar: [
+                "Please call me [Your Name] from now on.",
+                "Remember my name is [Your Name].",
+                "Let's be more formal, please use my name."
+            ]
+        },
+    ];
+
+    const openModal = (suggestion) => {
+        setSelectedSuggestion(suggestion);
+        setModalIsOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalIsOpen(false);
+        setSelectedSuggestion(null);
+    };
+
   // Animation trigger effect
-  React.useEffect(() => {
+  useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -610,48 +723,16 @@ function Home() {
         </div>
         <div className="section-divider my-4 relative z-10"/>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
-          <SuggestionCard title="Greet the Sun" phrase="summarize my tasks every day at 6am" icon={<Icon.Check/>} />
-          <SuggestionCard title="Root a New Habit" phrase="run every Sunday at 7am" icon={<Icon.Timer/>} />
-          <SuggestionCard title="A Gentle Nudge" phrase="remind me to call mom at 6pm today" icon={<Icon.Bell/>} />
-          <SuggestionCard title="Find Your Clearing" phrase="don't reply to my message for an hour" icon={<Icon.Bell/>} />
-          <SuggestionCard title="Jot Down a Thought" phrase="Today I learned that elephants have incredible memories." icon={<Icon.Check/>} />
-          <SuggestionCard title="Personalize Your Assistant" phrase="From now on, always sign off with my name, [Your Name]." icon={<Icon.Check/>} />
+          {suggestions.map((suggestion, index) => (
+              <SuggestionCard 
+                key={index}
+                title={suggestion.title} 
+                phrase={suggestion.phrase} 
+                icon={suggestion.icon} 
+                onClick={() => openModal(suggestion)}
+              />
+          ))}
         </div>
-      </section>
-
-      {/* How to talk to Nenrin */}
-      <section className="mt-6 card section-card relative">
-        <div className="wooden-rings-2"></div>
-        <div className="flex items-center gap-3 mb-4 relative z-10">
-          <div className="p-2 rounded-xl bg-gradient-to-r from-nenrin-forest to-nenrin-gold">
-            <Icon.Spark className="text-white animate-sparkle" width="20" height="20" style={{ animationDelay: "1s" }}/>
-          </div>
-          <div>
-            <h2 className="nenrin-font-heading text-[22px] font-[700] tracking-[.02em] text-nenrin-ink">
-              Planting Seeds of Action
-            </h2>
-            <p className="nenrin-font-body text-sm text-nenrin-text-light mt-1">Natural ways to communicate your intentions</p>
-          </div>
-        </div>
-        <div className="section-divider my-4 relative z-10"/>
-        <ul className="nenrin-font-body text-[15px] grid grid-cols-1 md:grid-cols-2 gap-4 list-none p-0 relative z-10">
-          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
-            <span className="chip">New Task</span> 
-            <span className="flex-1 text-nenrin-ink">"call Dinda tomorrow at 9am"</span>
-          </li>
-          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
-            <span className="chip">Reminder</span> 
-            <span className="flex-1 text-nenrin-ink">"remind me Friday 6pm to pay bills"</span>
-          </li>
-          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
-            <span className="chip">Reschedule</span> 
-            <span className="flex-1 text-nenrin-ink">"move design review to next Tuesday 10am"</span>
-          </li>
-          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
-            <span className="chip">Ask for Advice</span> 
-            <span className="flex-1 text-nenrin-ink">"what should I do first today?"</span>
-          </li>
-        </ul>
       </section>
 
       {/* Glossary */}
@@ -701,19 +782,60 @@ function Home() {
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-nenrin-forest"/>
-              Categories
+              Silent Mode
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">Light labels to group your work, like 'Work' or 'Personal'.<br/><i className="text-nenrin-forest font-medium">Try: "set category Work for 'draft proposal'"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">AI will still process your message but not respond and give a summary at the end.<br/><i className="text-nenrin-forest font-medium">Try: "silent mode for the next hour"</i></p>
           </div>
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-nenrin-sprout"/>
-              AI Actions
+               Expert Mode
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">Optional, scheduled automations like a daily summary or quiet hours.<br/><i className="text-nenrin-forest font-medium">Try: "daily task summary every day at 6am"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">You can ask Nenrin to merge, break down the task, or more.<br/><i className="text-nenrin-forest font-medium">Try: "expert mode: break down 'plan trip' into smaller tasks"</i></p>
           </div>
         </div>
       </section>
+
+      {/* How to talk to Nenrin */}
+      <section className="mt-6 card section-card relative">
+        <div className="wooden-rings-2"></div>
+        <div className="flex items-center gap-3 mb-4 relative z-10">
+          <div className="p-2 rounded-xl bg-gradient-to-r from-nenrin-forest to-nenrin-gold">
+            <Icon.Spark className="text-white animate-sparkle" width="20" height="20" style={{ animationDelay: "1s" }}/>
+          </div>
+          <div>
+            <h2 className="nenrin-font-heading text-[22px] font-[700] tracking-[.02em] text-nenrin-ink">
+              Planting Seeds of Action
+            </h2>
+            <p className="nenrin-font-body text-sm text-nenrin-text-light mt-1">Natural ways to communicate your intentions</p>
+          </div>
+        </div>
+        <div className="section-divider my-4 relative z-10"/>
+        <ul className="nenrin-font-body text-[15px] grid grid-cols-1 md:grid-cols-2 gap-4 list-none p-0 relative z-10">
+          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
+            <span className="chip">New Task</span> 
+            <span className="flex-1 text-nenrin-ink">"call Dinda tomorrow at 9am"</span>
+          </li>
+          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
+            <span className="chip">Reminder</span> 
+            <span className="flex-1 text-nenrin-ink">"remind me Friday 6pm to pay bills"</span>
+          </li>
+          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
+            <span className="chip">Reschedule</span> 
+            <span className="flex-1 text-nenrin-ink">"move design review to next Tuesday 10am"</span>
+          </li>
+          <li className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-15 transition-all duration-300 hover:shadow-md">
+            <span className="chip">Ask for Advice</span> 
+            <span className="flex-1 text-nenrin-ink">"what should I do first today?"</span>
+          </li>
+        </ul>
+      </section>
+
+      <SimilarExpressionsModal 
+        isOpen={modalIsOpen}
+        onClose={closeModal}
+        suggestion={selectedSuggestion}
+      />
     </>
   );
 }
