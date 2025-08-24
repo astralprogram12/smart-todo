@@ -770,7 +770,7 @@ function Home() {
               <div className="w-2 h-2 rounded-full bg-nenrin-gold"/>
               Tasks
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">Your to-dos. You can add, edit, complete, or break them into subtasks.<br/><i className="text-nenrin-forest font-medium">Try: "add task: call Dinda tomorrow 9am"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">Your to-dos. You can add, edit, complete, or organized them into category.<br/><i className="text-nenrin-forest font-medium">Try: "add task: call Dinda tomorrow 9am"</i></p>
           </div>
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">

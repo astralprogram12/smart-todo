@@ -110,31 +110,10 @@ export default function SignupPage() {
     if (data?.plan_info) {
       sessionStorage.setItem('plan_info', JSON.stringify(data.plan_info))
     }
-    
-    // Send welcome message for new users
-    if (data?.is_new_user || data?.is_first_login) {
-      try {
-        console.log('Sending welcome message to new user:', phoneNumber)
-        const response = await fetch('https://heagzwnxlcvpwglyuoyg.supabase.co/functions/v1/send-welcome-message', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ phone: phoneNumber })
-        })
-        
-        if (!response.ok) {
-          console.warn('Failed to send welcome message, but continuing with signup')
-        } else {
-          console.log('Welcome message sent successfully')
-        }
-      } catch (error) {
-        console.warn('Error sending welcome message:', error, 'but continuing with signup')
-      }
-    }
+
     
     // Redirect to dashboard page for new user onboarding
-    navigate('/dashboard')
+    navigate('/onboarding')
   }
 
   if (showOTPVerification) {
