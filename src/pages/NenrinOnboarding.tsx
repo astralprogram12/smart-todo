@@ -291,7 +291,8 @@ export default function NenrinOnboarding(){
     } catch (error) {
       console.warn('Error sending welcome message:', error, 'but continuing with signup');
     }
-    complete(); // Dismiss the modal and redirect
+  console.log("Onboarding finished or skipped.");
+  window.location.href = '/dashboard'; // Dismiss the modal and redirect
   };
 
   // Handles actions from buttons (next, send_welcome, done).
@@ -301,12 +302,11 @@ export default function NenrinOnboarding(){
     } else if (intent === "send_welcome") {
       sendWelcomeMessage();
     } else {
-      complete();
+    console.log("Onboarding finished or skipped.");
+  window.location.href = '/dashboard';
     }
   };
 
-  // The component returns null if it has been dismissed, effectively hiding it.
-  if (dismissed) return null;
 
   return (
     <main className="relative min-h-screen w-full nenrin-font-body" style={{ background:"var(--nenrin-mist)", color:"var(--nenrin-ink)" }}>
@@ -326,7 +326,7 @@ export default function NenrinOnboarding(){
             <NenrinLogo />
             <button
               className="nenrin-font-body text-sm opacity-70 hover:opacity-100 nenrin-focus px-2 py-1 rounded-md"
-              onClick={() => complete()}
+              onClick={() => handleAction("done")}
               aria-label="Skip onboarding"
             >Skip</button>
           </header>
