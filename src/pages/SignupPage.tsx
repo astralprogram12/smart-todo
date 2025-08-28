@@ -113,7 +113,7 @@ export default function SignupPage() {
 
     
     // Redirect to dashboard page for new user onboarding
-    navigate('/onboarding')
+    navigate('/onboarding', { state: { phone: phoneNumber } })
   }
 
   if (showOTPVerification) {
