@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient'; // Make sure this path is correct
+import { supabase } from '../lib/supabase'; // Make sure this path is correct
 
 // Nenrin — WhatsApp Onboarding (Complete, Single-File)
 // This component creates a multi-step onboarding flow for a new user.
