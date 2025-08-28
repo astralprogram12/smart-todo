@@ -131,29 +131,6 @@ const Icon = {
   ),
 };
 
-// Custom hook to manage the one-time visibility of the onboarding flow.
-function useOnlyOnce(key = "nenrin_onboarded"){
-  const [dismissed, setDismissed] = useState(true); // Default to true to avoid flash of content
-  useEffect(() => {
-    // Allows for debugging by adding ?debugOnboarding=1 to the URL
-    const url = new URL(window.location.href);
-    const debug = url.searchParams.get("debugOnboarding");
-    const stored = localStorage.getItem(key);
-    if (!stored || debug === "1") {
-        setDismissed(false);
-    } else {
-        setDismissed(true);
-    }
-  }, [key]);
-  
-  const complete = () => {
-      localStorage.setItem(key, "true");
-      // Redirect to dashboard page for new user onboarding
-      window.location.href = '/dashboard';
-  };
-  
-  return { dismissed, complete };
-}
 
 // Renders a chat-style bubble for demonstration purposes.
 function Bubble({ children, role = "user" }){
@@ -286,7 +263,6 @@ const cards = [
 
 // ----------------- Main Component -----------------
 export default function NenrinOnboarding(){
-  const { dismissed, complete } = useOnlyOnce();
   const [index, setIndex] = useState(0);
   const total = cards.length;
   const step = cards[index];

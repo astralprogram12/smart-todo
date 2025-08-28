@@ -464,6 +464,59 @@ Deno.serve(async (req) => {
               console.log('✅ Successfully created new user_whatsapp record with ID:', userId)
             }
           }
+
+          // --- ADD THIS NEW SECTION HERE ---
+          // Step 2.1: Create default AI Brain Memory for the new user
+          if (userId) { // Ensure userId is available
+            console.log('Setting up default AI brain memory for new user:', userId);
+
+            const defaultBrainMemoryContent = {
+              "response_style": {
+                "default": "singkat, sederhana, langsung ke inti",
+                "detailed_mode": "aktif jika diminta atau ketika menemukan/mencari informasi baru",
+                "trigger_for_detailed": "think hard"
+              },
+              "language_preference": "indonesia",
+              "tone": {
+                "general": "ramah, jelas, mudah dipahami",
+                "formal_level": "semi-formal (tidak terlalu kaku, tidak terlalu santai)"
+              },
+              "additional_info": {
+                "examples": [
+                  "Jika ada pertanyaan sederhana → balas ringkas",
+                  "Jika user tulis 'think hard' → berikan analisis lebih dalam dan teliti",
+                  "Jika menemukan data/hasil pencarian → sertakan detail tambahan"
+                ],
+                "notes": "Hindari penjelasan bertele-tele kecuali user secara eksplisit meminta detail"
+              }
+            };
+
+            const { error: brainMemoryError } = await supabase
+              .from('ai_brain_memories')
+              .insert([
+                {
+                  user_id: userId,
+                  brain_data_type: 'communication_Style', // Ensure this enum value exists in your DB
+                  content: defaultBrainMemoryContent, // This is the JSON object you provided
+                  importance: 5,
+                  // created_at and updated_at will be set by default by your table definition
+                  // If 'content_json' is meant for the string description you provided ("Bahasa Indonesia..."),
+                  // you'd add it here, assuming its column type in the DB is TEXT, not JSONB.
+                  // For now, I'm assuming 'content' (jsonb) is for the structured JSON data.
+                  // If your table truly has two jsonb columns ('content' and 'content_json') and you
+                  // want to use both, you'd need to clarify their intended usage.
+                },
+              ]);
+
+            if (brainMemoryError) {
+              console.error('CRITICAL ERROR creating AI brain memory record:', brainMemoryError);
+              // Decide if this should halt signup or just log. For critical setup, halting is safer.
+              throw new Error('Failed to set up AI brain memory: ' + brainMemoryError.message);
+            } else {
+              console.log('✅ Successfully created AI brain memory record for user:', userId);
+            }
+          }
+          // --- END NEW SECTION ---
           
           planInfo = {
             plan: 'premium',
