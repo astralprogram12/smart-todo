@@ -13,8 +13,7 @@ interface ConversationDemo {
   messages: Message[];
 }
 
-// --- COMBINED & IMPROVED DATA STRUCTURE ---
-// Storing conversations and titles together prevents them from going out of sync.
+// Data structure containing all conversation demos
 const conversationDemos: ConversationDemo[] = [
   // English
   { title: "Simple Reminder", messages: [ { sender: "user", content: "Remind me to drink water in 1 hour.", timestamp: "3:11 PM" }, { sender: "nenrin", content: "Of course! 💧 Reminder set for an hour from now.", timestamp: "3:11 PM" }] },
@@ -34,8 +33,6 @@ const conversationDemos: ConversationDemo[] = [
   { title: "Cek Cuaca", messages: [ { sender: "user", content: "Bagaimana cuaca di Bandung besok?", timestamp: "8:00 PM" }, { sender: "nenrin", content: "Besok di Bandung diperkirakan cerah berawan dengan suhu sekitar 24°C. 🌤️", timestamp: "8:00 PM" }] },
   { title: "Simpan Alamat", messages: [ { sender: "user", content: "Simpan alamat Dinda: Jalan Kenari nomor 12.", timestamp: "11:30 AM" }, { sender: "nenrin", content: "Oke, alamat Dinda sudah disimpan! 👍", timestamp: "11:30 AM" }] },
   { title: "Rekomendasi Film", messages: [ { sender: "user", content: "Rekomendasi film horor Indonesia dong.", timestamp: "9:00 PM" }, { sender: "nenrin", content: "'Pengabdi Setan' sangat direkomendasikan! Mau info lebih lanjut? 👻", timestamp: "9:00 PM" }] },
-  // --- FIX APPLIED HERE ---
-  // The invalid character '�' has been removed and replaced with a proper emoji '🍛'.
   { title: "Resep Masakan", messages: [ { sender: "user", content: "Resep nasi goreng spesial?", timestamp: "6:00 PM" }, { sender: "nenrin", content: "Tentu! Anda butuh nasi, telur, bawang, dan kecap manis. Mau resep lengkapnya? 🍛", timestamp: "6:00 PM" }] },
   { title: "Berita Terbaru", messages: [ { sender: "user", content: "Berita terbaru hari ini apa?", timestamp: "7:00 AM" }, { sender: "nenrin", content: "Ada beberapa berita utama tentang ekonomi dan olahraga. Tertarik topik tertentu? 📰", timestamp: "7:00 AM" }] },
   { title: "Ubah Kepribadian", messages: [ { sender: "user", content: "Mulai sekarang, bicaralah lebih formal.", timestamp: "1:00 PM" }, { sender: "nenrin", content: "Baik, permintaan Anda telah diterima. Saya akan berkomunikasi dengan lebih formal.", timestamp: "1:00 PM" }] },
@@ -116,26 +113,36 @@ function PhoneMockup({ conversation, title }: { conversation: Message[], title: 
   );
 }
 
-// The main component for the chat demonstration, now using the improved data structure.
+// --- MODIFICATION FOR RANDOMIZATION ---
 export default function ChatDemo() {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  // We initialize with a random index so the first conversation isn't always the same.
+  const [currentIndex, setCurrentIndex] = useState(
+    () => Math.floor(Math.random() * conversationDemos.length)
+  );
 
   useEffect(() => {
-    // This interval will cycle through the conversations.
     const interval = setInterval(() => {
-      setCurrentIndex(prevIndex => (prevIndex + 1) % conversationDemos.length);
+      // We pass a function to setCurrentIndex to get the most recent previous index.
+      setCurrentIndex(prevIndex => {
+        let randomIndex;
+        // This loop ensures the new random index is different from the previous one.
+        do {
+          randomIndex = Math.floor(Math.random() * conversationDemos.length);
+        } while (randomIndex === prevIndex);
+        return randomIndex;
+      });
     }, 4000); // Cycle every 4 seconds
 
     return () => clearInterval(interval);
   }, []);
 
-  // Get the current conversation object
   const currentDemo = conversationDemos[currentIndex];
 
   return (
     <div>
+      {/* The key prop is still important for forcing the component to re-mount and reset its animation */}
       <PhoneMockup 
-        key={currentIndex} // Using key to force re-mount and restart animation
+        key={currentIndex} 
         conversation={currentDemo.messages} 
         title={currentDemo.title} 
       />

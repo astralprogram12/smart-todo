@@ -1,7 +1,7 @@
 'use client'
 
 import { Header } from '../components/Header'
-import { ChatDemo } from '../components/ChatDemo'
+import  ChatDemo  from '../components/ChatDemo'
 import { TrustedCompanies } from '../components/TrustedCompanies'
 import { HowItWorks } from '../components/HowItWorks'
 import { PricingSection } from '../components/PricingSection'
