@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     // Welcome message content
     const welcomeMessage = `All set 🌱
 
-I'm Nenrin — calm help for tasks, reminders, and your private journal.
+I'm Nenrin — calm help for tasks, reminders,  journal and many more.
 
 Just message me in your own words, and I'll take care of the rest.`
 

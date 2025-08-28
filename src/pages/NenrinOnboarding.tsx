@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { supabase } from '../lib/supabaseClient'; // <-- 1. IMPORT SUPABASE (check path)
+import { supabase } from '../lib/supabase'; // <-- 1. IMPORT SUPABASE (check path)
 
 // Nenrin — WhatsApp One-Time Onboarding (Complete, Single-File)
 // This component creates a multi-step onboarding flow for a WhatsApp-based service.
