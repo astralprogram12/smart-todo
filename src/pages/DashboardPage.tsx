@@ -645,13 +645,13 @@ function Home() {
             ]
         },
         { 
-            title: "Find Your Clearing", 
-            phrase: "don't reply to my message for an hour", 
+            title: "Find Needle in the hasctack", 
+            phrase: "Where is rina house again?", 
             icon: <Icon.Bell/>,
             similar: [
-                "I need to go into a deep work cave for the next hour.",
-                "Activate focus mode for 60 minutes.",
-                "Going offline for a bit. Please hold my messages."
+                "Summarize what do i write last week.",
+                "What father would like for his birthday.",
+                "Idea for holiday"
             ]
         },
         { 
@@ -659,9 +659,9 @@ function Home() {
             phrase: "Today I learned that elephants have incredible memories.", 
             icon: <Icon.Check/>,
             similar: [
-                "File this away: elephants have powerful memories.",
-                "A quick thought for my journal: the memory of an elephant is amazing.",
-                "Capture this idea - elephants don't forget."
+                "Rina house is beside a mosque have green color.",
+                "Fathers Wallet look old.",
+                "Bali Festival is on October"
             ]
         },
         { 
@@ -754,9 +754,9 @@ function Home() {
           <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-nenrin-forest"/>
-              Memory
+              AI Brain
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">Personal details Nenrin should remember about you to personalize replies automatically. <br/><i className="text-nenrin-forest font-medium">Try: "remember my work hours are 9-5"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">Spesify how you want your nenrin response, long , short and in any leangue<br/><i className="text-nenrin-forest font-medium">Try: "remember my work hours are 9-5"</i></p>
           </div>
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
@@ -777,14 +777,14 @@ function Home() {
               <div className="w-2 h-2 rounded-full bg-nenrin-sage"/>
               Reminders
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">Gentle nudges at a specific date and time. You can reschedule or remove them anytime.<br/><i className="text-nenrin-forest font-medium">Try: "remind me today 6pm to send invoice"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">Gentle nudges at a specific date and time or repeated schedule. You can reschedule or remove them anytime.<br/><i className="text-nenrin-forest font-medium">Try: "remind me today 6pm to send invoice"</i></p>
           </div>
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-nenrin-forest"/>
-              Silent Mode
+              Internet Access
             </h3>
-            <p className="text-nenrin-text-light leading-relaxed">AI will still process your message but not respond and give a summary at the end.<br/><i className="text-nenrin-forest font-medium">Try: "silent mode for the next hour"</i></p>
+            <p className="text-nenrin-text-light leading-relaxed">AI stil can find relevant and uptodate information for me.<br/><i className="text-nenrin-forest font-medium">Try: "silent mode for the next hour"</i></p>
           </div>
            <div className="p-4 rounded-xl bg-gradient-to-br from-nenrin-mist to-transparent border border-nenrin-forest border-opacity-8 transition-all duration-300 hover:shadow-lg hover:border-opacity-18">
             <h3 className="font-bold text-base nenrin-font-heading text-nenrin-forest mb-2 flex items-center gap-2">
