@@ -1,4 +1,4 @@
-// simplified-whatsapp-auth-verify-otp/index.ts - FULL CORRECTED VERSION
+// simplified-whatsapp-auth-verify-otp/index.ts - FINAL VERSION
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -13,7 +13,8 @@ function normalizePhoneNumber(phone: string): string {
     normalized = '62' + normalized.substring(1);
   }
   
-  // If no country code, add 62 (Indonesia)
+  // If no country code (assuming <10 digits is missing country code)
+  // and it's not already prefixed with country code, add 62 (Indonesia)
   if (normalized.length <= 10 && !normalized.startsWith('62')) {
     normalized = '62' + normalized;
   }
@@ -25,171 +26,369 @@ Deno.serve(async (req) => {
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'Access-Control-Allow-Credentials': 'false'
   }
 
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders })
+    return new Response(null, { status: 200, headers: corsHeaders })
   }
 
   try {
     console.log('Starting simplified OTP verification process')
     
+    // Get environment variables
     const supabaseUrl = Deno.env.get('SUPABASE_URL')
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
 
     if (!supabaseUrl || !serviceRoleKey) {
+      console.error('Missing Supabase credentials')
       throw new Error('Supabase configuration missing')
     }
 
+    // Create Supabase client with service role key
     const supabase = createClient(supabaseUrl, serviceRoleKey)
 
+    // Get request data
     const reqData = await req.json()
-    const { phone, code, test_mode, skip_verification, signup_mode = false } = reqData
+    const { phone, code, test_mode, demo_mode, skip_verification, signup_mode = false } = reqData
+    console.log('Received verification request:', reqData)
     
-    if (!phone) throw new Error('Phone number is required')
-    if (!code && !skip_verification) throw new Error('Verification code is required')
+    const isTestMode = test_mode === true
+    const isDemoMode = demo_mode === true
+    const isSkipMode = skip_verification === true
+    const isSpecialTestCode = code === '123456' // Special test code that always works in test mode
 
+    // Validate inputs
+    if (!phone) {
+      console.error('Missing phone number')
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Phone number is required',
+        debug: { timestamp: new Date().toISOString(), request: reqData }
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (!code && !isSkipMode) {
+      console.error('Missing verification code')
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Verification code is required',
+        debug: { timestamp: new Date().toISOString(), request: reqData }
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      })
+    }
+
+    // Normalize phone number
     const normalizedPhone = normalizePhoneNumber(phone)
+    console.log('Normalized phone number:', normalizedPhone)
 
-    // --- SPECIAL BYPASS/TEST PATHS ---
-    if (skip_verification) {
-      // Logic for skip_verification mode...
-      // This is usually kept for debugging and can be omitted if not needed.
-      console.log('Skip verification mode enabled - bypassing verification');
-      const demoUserId = `demo-${Date.now()}`;
-      return new Response(JSON.stringify({ success: true, message: 'Verification bypassed (demo mode)', demo_mode: true, user: { id: demoUserId, phone: normalizedPhone }, session: { /* ... dummy session ... */ } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-    }
-    if (test_mode && code === '123456') {
-      // Logic for test_mode...
-      // This is also for debugging.
-      console.log('Test mode enabled with special code - verification successful');
-      const testUserId = '00000000-0000-0000-0000-000000000000';
-      return new Response(JSON.stringify({ success: true, message: 'Test authentication successful', test_mode: true, user: { id: testUserId, phone: normalizedPhone }, session: { /* ... dummy session ... */ } }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    // SPECIAL BYPASS PATH - Skip verification if requested
+    if (isSkipMode) {
+      console.log('Skip verification mode enabled - bypassing verification')
+      
+      const demoUserId = `demo-${Date.now()}`
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Verification bypassed (demo mode)',
+          demo_mode: true,
+          skip_verification: true,
+          user: { id: demoUserId, phone: normalizedPhone },
+          session: {
+            access_token: 'demo_access_token',
+            refresh_token: 'demo_refresh_token',
+            user: {
+              id: demoUserId,
+              phone: normalizedPhone,
+              email: `${normalizedPhone}@demo.com`,
+              role: 'authenticated',
+              aud: 'authenticated'
+            }
+          },
+          debug: { timestamp: new Date().toISOString(), mode: 'skip_verification', normalizedPhone }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    // --- PRODUCTION VERIFICATION FLOW ---
+    // SPECIAL TEST MODE PATH - always succeed with valid user data in test mode
+    if (isTestMode && isSpecialTestCode) {
+      console.log('Test mode enabled with special code - verification successful')
+      
+      const testUserId = '00000000-0000-0000-0000-000000000000'
+      
+      return new Response(
+        JSON.stringify({
+          success: true,
+          message: 'Test authentication successful',
+          test_mode: true,
+          is_first_login: true,
+          plan_info: {
+            plan: 'pro',
+            plan_start: new Date().toISOString().split('T')[0],
+            plan_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+          },
+          user: { id: testUserId, phone: normalizedPhone },
+          session: {
+            access_token: 'test_access_token',
+            refresh_token: 'test_refresh_token',
+            user: {
+              id: testUserId,
+              phone: normalizedPhone,
+              email: `${normalizedPhone}@test.com`,
+              role: 'authenticated',
+              aud: 'authenticated'
+            }
+          },
+          debug: { timestamp: new Date().toISOString(), mode: 'test_mode_special_code', normalizedPhone, code }
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // PRODUCTION VERIFICATION FLOW
     console.log('Starting production verification flow')
     
     const now = new Date().toISOString()
+    console.log('Current time for expiration check:', now)
+    
     let verificationSuccess = false
     let userId = null
     let isFirstLogin = false
     let planInfo = null
     
     // Step 1: Verify the OTP code
-    const { data: codes, error: fetchError } = await supabase
-      .from('wa_auth_codes')
-      .select('*')
-      .eq('phone', normalizedPhone)
-      .gt('expires_at', now)
-      .eq('verified', false)
-      .order('created_at', { ascending: false })
-      .limit(1)
+    try {
+      const { data: codes, error: fetchError } = await supabase
+        .from('wa_auth_codes')
+        .select('*')
+        .eq('phone', normalizedPhone)
+        .gt('expires_at', now)
+        .eq('verified', false)
+        .lte('attempts', 4)
+        .order('created_at', { ascending: false })
+        .limit(1)
 
-    if (fetchError) throw new Error('Database error fetching code: ' + fetchError.message)
-    if (!codes || codes.length === 0) throw new Error('No valid verification code found or code expired')
+      if (fetchError) {
+        console.error('Database error fetching code:', fetchError)
+        throw new Error('Failed to verify code: ' + fetchError.message)
+      }
+      
+      if (!codes || codes.length === 0) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'No valid verification code found or code expired',
+          debug: { timestamp: new Date().toISOString(), query: { phone: normalizedPhone, after: now } }
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
 
-    const verificationRecord = codes[0]
-    if (String(code).trim() !== String(verificationRecord.code).trim()) {
-      // Increment attempts on failure
-      await supabase.from('wa_auth_codes').update({ attempts: (verificationRecord.attempts || 0) + 1 }).eq('id', verificationRecord.id)
-      throw new Error('Invalid verification code')
+      const verificationRecord = codes[0]
+      const submittedCode = String(code).trim()
+      const storedCode = String(verificationRecord.code).trim()
+      
+      if (submittedCode !== storedCode) {
+        const newAttempts = (verificationRecord.attempts || 0) + 1
+        await supabase.from('wa_auth_codes').update({ attempts: newAttempts }).eq('id', verificationRecord.id)
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: 'Invalid verification code',
+          debug: { timestamp: new Date().toISOString(), attempts: newAttempts }
+        }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+      }
+
+      await supabase.from('wa_auth_codes').update({ verified: true }).eq('id', verificationRecord.id)
+      console.log('OTP verification successful')
+      verificationSuccess = true
+      
+    } catch (verificationError) {
+      console.error('Error during OTP verification:', verificationError)
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Verification failed: ' + verificationError.message,
+        debug: { timestamp: new Date().toISOString(), error: verificationError.message }
+      }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
-    
-    await supabase.from('wa_auth_codes').update({ verified: true }).eq('id', verificationRecord.id)
-    verificationSuccess = true
     
     // Step 2: Handle user lookup/creation
     if (verificationSuccess) {
-      const { data: existingUser, error: userError } = await supabase
-        .from('user_whatsapp')
-        .select('user_id, last_login, plan, plan_start, plan_end')
-        .eq('phone', normalizedPhone)
-        .maybeSingle()
-
-      if (userError) throw new Error('Error checking for existing user: ' + userError.message)
-
-      if (existingUser) {
-        // --- USER EXISTS (LOGIN) ---
-        console.log('Found existing user:', existingUser.user_id)
-        userId = existingUser.user_id
-        isFirstLogin = existingUser.last_login === null
-
-        const { error: updateError } = await supabase
+      console.log('OTP verified, handling user lookup/creation')
+      
+      try {
+        const { data: existingWhatsappUsers, error: whatsappUserError } = await supabase
           .from('user_whatsapp')
-          .update({ status: 'connected', wa_connected: true, last_login: now })
-          .eq('user_id', userId)
+          .select('user_id, status, wa_connected, last_login, plan, plan_start, plan_end')
+          .eq('phone', normalizedPhone)
+          .maybeSingle()
 
-        if (updateError) throw new Error('Failed to update user status: ' + updateError.message)
-        
-        planInfo = { plan: existingUser.plan, plan_start: existingUser.plan_start, plan_end: existingUser.plan_end }
-
-      } else {
-        // --- USER DOES NOT EXIST (SIGNUP) ---
-        if (!signup_mode) {
-          return new Response(JSON.stringify({ success: false, error: 'User not found. Please sign up first.', redirect_to_signup: true }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+        if (whatsappUserError) {
+          throw new Error('Failed to check user: ' + whatsappUserError.message)
         }
 
-        console.log('Creating new user for signup')
-        isFirstLogin = true
-        
-        // 2.1: Create user in auth.users
-        const { data: newAuthUser, error: createAuthError } = await supabase.auth.admin.createUser({
-          phone: normalizedPhone,
-          phone_confirmed: true,
-        })
-        if (createAuthError) throw new Error('Failed to create auth user: ' + createAuthError.message)
-        
-        userId = newAuthUser?.user?.id
-        if (!userId) throw new Error('Failed to get new user ID')
-        console.log('New auth user created with ID:', userId)
-        
-        // --- MODIFICATION START ---
-        //
-        // REMOVED the insert into 'user_whatsapp'.
-        // This was causing a race condition with your database trigger.
-        // The trigger creates the user profile automatically when a new user is added to 'auth.users'.
-        // Removing this block allows the code to continue to the next step without error.
-        //
-        // --- MODIFICATION END ---
-        
-        // ✅ 2.2: CREATE AI BRAIN MEMORY (This code will now be executed)
-        console.log('Setting up default AI brain memory for new user:', userId)
-        const defaultBrainMemoryContent = {
-          "response_style": { "default": "singkat, sederhana, langsung ke inti", "detailed_mode": "aktif jika diminta", "trigger_for_detailed": "think hard" },
-          "language_preference": "indonesia",
-          "tone": { "general": "ramah, jelas, mudah dipahami", "formal_level": "semi-formal" }
-        };
-        const { error: brainMemoryError } = await supabase
-          .from('ai_brain_memories')
-          .insert({
-            user_id: userId,
-            brain_data_type: 'communication_Style',
-            content: "you are a helpful assistant",
-            importance: 5,
-            content_json: defaultBrainMemoryContent,
+        if (existingWhatsappUsers) {
+          // User exists - update their status to connected
+          userId = existingWhatsappUsers.user_id
+          console.log('Found existing user:', userId)
+          
+          const lastLogin = existingWhatsappUsers.last_login ? new Date(existingWhatsappUsers.last_login) : null
+          const daysSinceLastLogin = lastLogin ? Math.floor((new Date().getTime() - lastLogin.getTime()) / (1000 * 60 * 60 * 24)) : null
+          const shouldResetPlan = daysSinceLastLogin !== null && daysSinceLastLogin > 14
+          
+          const updateData: any = { status: 'connected', wa_connected: true, last_login: new Date().toISOString() }
+          if (shouldResetPlan) {
+            updateData.plan = 'free'
+            console.log('Resetting plan to free due to inactivity')
+          }
+          
+          const { error: updateError } = await supabase.from('user_whatsapp').update(updateData).eq('user_id', userId)
+          if (updateError) {
+            throw new Error('Failed to update user status: ' + updateError.message)
+          }
+          
+          console.log('✅ Successfully updated user_whatsapp record - status: connected, wa_connected: true')
+          isFirstLogin = lastLogin === null
+          planInfo = {
+            plan: shouldResetPlan ? 'free' : existingWhatsappUsers.plan,
+            plan_start: existingWhatsappUsers.plan_start,
+            plan_end: existingWhatsappUsers.plan_end
+          }
+          
+        } else {
+          // User doesn't exist - must be in signup mode
+          if (!signup_mode) {
+            return new Response(JSON.stringify({
+              success: false,
+              error: 'User not found. Please sign up first.',
+              redirect_to_signup: true,
+              debug: { timestamp: new Date().toISOString(), phone: normalizedPhone, signup_mode: signup_mode }
+            }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+          }
+          
+          // Create new user
+          console.log('Creating new user for signup')
+          isFirstLogin = true
+          
+          const { data: newAuthUser, error: createAuthError } = await supabase.auth.admin.createUser({
+            phone: normalizedPhone,
+            phone_confirmed: true,
+            email_confirmed: true
           })
-        if (brainMemoryError) throw new Error('Failed to set up AI brain memory: ' + brainMemoryError.message)
-        console.log('✅ Successfully created AI brain memory record')
 
-        // Set default plan info for the response
-        const currentDate = new Date();
-        const planEndDate = new Date(currentDate);
-        planEndDate.setDate(currentDate.getDate() + 30);
-        const formattedCurrentDate = currentDate.toISOString().split('T')[0];
-        const formattedPlanEndDate = planEndDate.toISOString().split('T')[0];
-        planInfo = { plan: 'premium', plan_start: formattedCurrentDate, plan_end: formattedPlanEndDate }
+          if (createAuthError) {
+            throw new Error('Failed to create auth user account: ' + createAuthError.message)
+          }
+          
+          userId = newAuthUser?.user?.id
+          if (!userId) {
+            throw new Error('Failed to get user ID for newly created auth user')
+          }
+          console.log('New auth user created with ID:', userId)
+          
+          const { data: existingRecord, error: checkError } = await supabase.from('user_whatsapp').select('user_id').eq('user_id', userId).maybeSingle()
+          if (checkError) {
+            throw new Error('Failed to check existing user record: ' + checkError.message)
+          }
+          
+          const currentDate = new Date()
+          const planEndDate = new Date(currentDate)
+          planEndDate.setDate(currentDate.getDate() + 30)
+          const formattedCurrentDate = currentDate.toISOString().split('T')[0]
+          const formattedPlanEndDate = planEndDate.toISOString().split('T')[0]
+          
+          if (existingRecord) {
+            // Database trigger already created the record - update it
+            console.log('Database trigger created record, updating to connected status')
+            const updateData = { status: 'connected', wa_connected: true, last_login: new Date().toISOString(), plan: 'premium', plan_start: formattedCurrentDate, plan_end: formattedPlanEndDate }
+            const { error: updateError } = await supabase.from('user_whatsapp').update(updateData).eq('user_id', userId)
+            if (updateError) {
+              throw new Error('Failed to update user status after trigger: ' + updateError.message)
+            }
+            console.log('✅ Successfully updated user_whatsapp record to connected status')
+          } else {
+            // No trigger, so create the record manually
+            console.log('No existing record found, creating new user_whatsapp record')
+            const newUserData = { user_id: userId, phone: normalizedPhone, status: 'connected', wa_connected: true, last_login: new Date().toISOString(), plan: 'premium', plan_start: formattedCurrentDate, plan_end: formattedPlanEndDate, daily_message_count: 0, last_message_date: formattedCurrentDate, timezone: 'Asia/Jakarta', schedule_limit: 10, auth_id: userId }
+            const { error: createError } = await supabase.from('user_whatsapp').insert(newUserData)
+            if (createError) {
+              throw new Error('Failed to create user: ' + createError.message)
+            }
+            console.log('✅ Successfully created new user_whatsapp record with ID:', userId)
+          }
+          
+          // --- ADD DEFAULT AI BRAIN MEMORY FOR NEW USER ---
+          console.log('>>> Reached point to create AI brain memory. User ID:', userId)
+          console.log('Setting up default AI brain memory for new user:', userId)
+
+          const defaultBrainMemoryContent = {
+            "response_style": {
+              "default": "singkat, sederhana, langsung ke inti",
+              "detailed_mode": "aktif jika diminta atau ketika menemukan/mencari informasi baru",
+              "trigger_for_detailed": "think hard"
+            },
+            "language_preference": "indonesia",
+            "tone": {
+              "general": "ramah, jelas, mudah dipahami",
+              "formal_level": "semi-formal (tidak terlalu kaku, tidak terlalu santai)"
+            },
+            "additional_info": {
+              "examples": [
+                "Jika ada pertanyaan sederhana → balas ringkas",
+                "Jika user tulis 'think hard' → berikan analisis lebih dalam dan teliti",
+                "Jika menemukan data/hasil pencarian → sertakan detail tambahan"
+              ],
+              "notes": "Hindari penjelasan bertele-tele kecuali user secara eksplisit meminta detail"
+            }
+          }
+
+          const { error: brainMemoryError } = await supabase
+            .from('ai_brain_memories')
+            .insert({
+              user_id: userId,
+              brain_data_type: 'communication_Style', // Ensure this enum value exists in your DB
+              content: defaultBrainMemoryContent,
+              importance: 5,
+            })
+
+          if (brainMemoryError) {
+            console.error('CRITICAL ERROR creating AI brain memory record:', brainMemoryError)
+            throw new Error('Failed to set up AI brain memory: ' + brainMemoryError.message)
+          } else {
+            console.log('✅ Successfully created AI brain memory record for user:', userId)
+          }
+          // --- END NEW SECTION ---
+          
+          planInfo = {
+            plan: 'premium',
+            plan_start: formattedCurrentDate,
+            plan_end: formattedPlanEndDate
+          }
+        }
+        
+      } catch (userError) {
+        console.error('Error during user operations:', userError)
+        throw new Error('User operation failed: ' + userError.message)
       }
     }
     
     // Step 3: Create session and return success
     if (verificationSuccess && userId) {
+      console.log('Creating session for user ID:', userId)
+      
       const sessionData = {
         access_token: `simplified_token_${userId}_${Date.now()}`,
         refresh_token: `simplified_refresh_${userId}_${Date.now()}`,
-        user: { id: userId, phone: normalizedPhone, role: 'authenticated' }
+        user: { id: userId, phone: normalizedPhone, email: `${normalizedPhone}@simplified.com`, role: 'authenticated', aud: 'authenticated' }
       }
 
+      console.log('✅ OTP verification process completed successfully')
       return new Response(
         JSON.stringify({
           success: true,
@@ -198,18 +397,26 @@ Deno.serve(async (req) => {
           user: { id: userId, phone: normalizedPhone },
           is_first_login: isFirstLogin,
           plan_info: planInfo,
+          debug: { timestamp: new Date().toISOString(), user_id: userId, normalized_phone: normalizedPhone, signup_mode: signup_mode, is_first_login: isFirstLogin, plan_info: planInfo }
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
-
-    throw new Error('Verification process failed at an unknown step')
+    
+    // Fallback error if something went wrong
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: 'Verification process failed unexpectedly',
+      debug: { timestamp: new Date().toISOString(), verification_success: verificationSuccess, user_id: userId }
+    }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     
   } catch (error) {
-    console.error('OTP Verification Error:', error)
+    const errorDetails = { message: error?.message || 'An unknown server error occurred', timestamp: new Date().toISOString(), stack: error?.stack }
+    console.error('OTP Verification Error:', errorDetails)
+    
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: errorDetails.message, debug: errorDetails }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
