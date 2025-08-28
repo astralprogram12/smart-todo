@@ -284,7 +284,7 @@ export default function NenrinOnboarding(){
       console.error('A critical error occurred:', err);
     }
     // Redirect AFTER the function call is attempted
-    window.location.href = '/onboarding';
+    
   };
 
   // Handles actions from buttons (next, send_welcome, done).
@@ -295,7 +295,7 @@ export default function NenrinOnboarding(){
       sendWelcomeMessage();
     } else { // This handles the "done" intent from "Maybe later" and "Skip"
       console.log("Onboarding skipped. Redirecting...");
-      window.location.href = '/onboarding';
+      
     }
   };
 
