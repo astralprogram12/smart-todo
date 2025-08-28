@@ -13,7 +13,7 @@ interface ConversationDemo {
   messages: Message[];
 }
 
-// Data structure containing all conversation demos
+// Data structure containing all conversation demos (no changes here)
 const conversationDemos: ConversationDemo[] = [
   // English
   { title: "Simple Reminder", messages: [ { sender: "user", content: "Remind me to drink water in 1 hour.", timestamp: "3:11 PM" }, { sender: "nenrin", content: "Of course! 💧 Reminder set for an hour from now.", timestamp: "3:11 PM" }] },
@@ -51,13 +51,31 @@ const conversationDemos: ConversationDemo[] = [
 ];
 
 
-// A reusable PhoneMockup component that animates a given conversation.
+// --- NEW HELPER FUNCTION ---
+/**
+ * Creates and returns a shuffled array of numbers from 0 to size - 1.
+ * Uses the Fisher-Yates (aka Knuth) shuffle algorithm for an unbiased shuffle.
+ */
+function createShuffledIndices(size: number): number[] {
+  // 1. Create an array of indices [0, 1, 2, ...]
+  const indices = Array.from({ length: size }, (_, i) => i);
+
+  // 2. Shuffle the array in-place
+  for (let i = indices.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [indices[i], indices[j]] = [indices[j], indices[i]]; // Swap elements
+  }
+
+  return indices;
+}
+
+
+// PhoneMockup component remains unchanged
 function PhoneMockup({ conversation, title }: { conversation: Message[], title: string }) {
   const [currentMessages, setCurrentMessages] = useState<Message[]>([]);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Animate conversation pairs (user + nenrin)
     const timer = setTimeout(() => {
       setCurrentMessages(conversation);
     }, 1000);
@@ -65,13 +83,11 @@ function PhoneMockup({ conversation, title }: { conversation: Message[], title: 
     return () => clearTimeout(timer);
   }, [conversation]);
 
-  // Scroll to bottom when new messages are added
   useEffect(() => {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [currentMessages]);
-
 
   return (
     <div className="w-80 mx-auto">
@@ -113,34 +129,48 @@ function PhoneMockup({ conversation, title }: { conversation: Message[], title: 
   );
 }
 
-// --- MODIFICATION FOR RANDOMIZATION ---
+
+// --- REWRITTEN ChatDemo COMPONENT WITH SHUFFLE LOGIC ---
 export default function ChatDemo() {
-  // We initialize with a random index so the first conversation isn't always the same.
-  const [currentIndex, setCurrentIndex] = useState(
-    () => Math.floor(Math.random() * conversationDemos.length)
+  const [playhead, setPlayhead] = useState(0);
+  const [shuffledIndices, setShuffledIndices] = useState(() => 
+    createShuffledIndices(conversationDemos.length)
   );
 
   useEffect(() => {
     const interval = setInterval(() => {
-      // We pass a function to setCurrentIndex to get the most recent previous index.
-      setCurrentIndex(prevIndex => {
-        let randomIndex;
-        // This loop ensures the new random index is different from the previous one.
-        do {
-          randomIndex = Math.floor(Math.random() * conversationDemos.length);
-        } while (randomIndex === prevIndex);
-        return randomIndex;
-      });
+      const nextPlayhead = playhead + 1;
+
+      // Check if we've reached the end of the shuffled list
+      if (nextPlayhead >= shuffledIndices.length) {
+        // Time to reshuffle for the next cycle
+        const lastIndex = shuffledIndices[shuffledIndices.length - 1];
+        let newShuffledIndices = createShuffledIndices(conversationDemos.length);
+
+        // Optional: Ensure the new cycle doesn't start with the same item it ended on
+        if (newShuffledIndices[0] === lastIndex) {
+          // A simple fix: swap the first and last elements of the new list
+          [newShuffledIndices[0], newShuffledIndices[newShuffledIndices.length - 1]] = 
+          [newShuffledIndices[newShuffledIndices.length - 1], newShuffledIndices[0]];
+        }
+        
+        setShuffledIndices(newShuffledIndices);
+        setPlayhead(0); // Reset playhead to the start of the new list
+      } else {
+        // Just advance to the next item in the current list
+        setPlayhead(nextPlayhead);
+      }
     }, 4000); // Cycle every 4 seconds
 
     return () => clearInterval(interval);
-  }, []);
+  }, [playhead, shuffledIndices]); // Re-run effect if playhead or the list itself changes
 
+  // Determine the actual index to display from our shuffled list
+  const currentIndex = shuffledIndices[playhead];
   const currentDemo = conversationDemos[currentIndex];
 
   return (
     <div>
-      {/* The key prop is still important for forcing the component to re-mount and reset its animation */}
       <PhoneMockup 
         key={currentIndex} 
         conversation={currentDemo.messages} 
