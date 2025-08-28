@@ -114,20 +114,20 @@ const Icon = {
   Pin: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
   ),
-  Timer: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+  Brain: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v0A2.5 2.5 0 0 1 9.5 7v0A2.5 2.5 0 0 1 7 4.5v0A2.5 2.5 0 0 1 9.5 2m0 13.5A2.5 2.5 0 0 1 12 18v0a2.5 2.5 0 0 1-2.5 2.5v0A2.5 2.5 0 0 1 7 18v0a2.5 2.5 0 0 1 2.5-2.5m5 0A2.5 2.5 0 0 1 17 18v0a2.5 2.5 0 0 1-2.5 2.5v0A2.5 2.5 0 0 1 12 18v0a2.5 2.5 0 0 1 2.5-2.5m0-13.5A2.5 2.5 0 0 1 17 4.5v0A2.5 2.5 0 0 1 14.5 7v0A2.5 2.5 0 0 1 12 4.5v0A2.5 2.5 0 0 1 14.5 2M9 11.5A2.5 2.5 0 0 1 11.5 9h1A2.5 2.5 0 0 1 15 11.5v1A2.5 2.5 0 0 1 12.5 15h-1A2.5 2.5 0 0 1 9 12.5v-1z"/></svg>
   ),
-  Bell: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+  Calendar: (props) => (
+     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
   ),
   Spark: (props) => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M12 2l1.8 4.8L18 9l-4.2 2.2L12 16l-1.8-4.8L6 9l4.2-2.2L12 2z"/></svg>
   ),
-  Mute: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>
+  Globe: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 18 15.3 15.3 0 0 1-8 0 15.3 15.3 0 0 1 4-18z"></path></svg>
   ),
-  Chat: (props) => (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+  Wand: (props) => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`w-5 h-5 ${props.className||""}`}><path d="M12 2L8 6l4 4-4 4-4 4 4 4 4-4 4 4 4-4-4-4 4-4-4-4-4-4z"/></svg>
   ),
 };
 
@@ -160,7 +160,7 @@ function Bubble({ children, role = "user" }){
   const isNenrin = role === "nenrin";
   return (
     <div className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm mb-2 ${isNenrin ? "self-start" : "self-end"}`}
-      style={{ background: isNenrin ? "#E7EFEA" : "#EDEDED", color: "var(--nenrin-ink)" }}
+      style={{ background: isNenrin ? "#E7EFEA" : "#F3F3F3", color: "var(--nenrin-ink)" }}
     >{children}</div>
   );
 }
@@ -182,21 +182,61 @@ const cards = [
   {
     title: "Welcome to Nenrin",
     body: (
-      <p className="text-[15px] leading-relaxed text-[color:var(--nenrin-ink)]/85">Calm productivity, right inside WhatsApp. We’ll keep this quick.</p>
+      <>
+        <p className="text-[15px] leading-relaxed text-[color:var(--nenrin-ink)]/85">Your personal journal, reminder, to-do list, and assistant—right inside WhatsApp.</p>
+        <div className="mt-4 p-3 bg-white/50 rounded-lg text-center">
+            <p className="font-semibold text-sm flex items-center justify-center">
+                <Icon.Pin className="inline-block mr-2 text-[color:var(--nenrin-forest)]" />
+                Pin Nenrin for easy access!
+            </p>
+        </div>
+      </>
     ),
     icon: <Icon.Spark className="text-[color:var(--nenrin-forest)]"/>,
     cta: { label: "Next", intent: "next" },
   },
   {
-    title: "Just write. Messy is okay.",
+    title: "Your Second Brain",
     body: (
       <>
-        <p className="text-[15px] leading-relaxed">Drop rough thoughts, todos, even a brain dump—Nenrin will help organize.</p>
+        <p className="text-[15px] leading-relaxed">Store information, recall it anytime. Just chat naturally, messy is fine.</p>
         <div className="mt-3 flex flex-col bg-white/50 p-3 rounded-lg">
-          <Bubble role="user">Remember Dinda's address: Apt B No. 31, behind the dog park. And always use emojis!</Bubble>
-          <Bubble role="nenrin">👍 Got it! Dinda's address is saved, and I'll remember to use emojis.</Bubble>
-          <Bubble role="user">Meeting with Dinda at 9. also, remind me Fri to submit report</Bubble>
-          <Bubble role="nenrin">Okey, I'll remember that. I noticed you set a meeting at 9, should I set the reminder at 7? 🤔</Bubble>
+          <Bubble role="user">Dinda's favorite book is The Hobbit.</Bubble>
+          <Bubble role="nenrin">👍 I'll remember that.</Bubble>
+          <Bubble role="user">what's dinda's favorite book again?</Bubble>
+          <Bubble role="nenrin">It's "The Hobbit"!</Bubble>
+        </div>
+      </>
+    ),
+    icon: <Icon.Brain className="text-[color:var(--nenrin-forest)]"/>,
+    cta: { label: "Next", intent: "next" },
+  },
+  {
+    title: "Effortless Scheduling",
+    body: (
+      <>
+        <p className="text-[15px] leading-relaxed">Set one-time or recurring reminders with simple language.</p>
+        <div className="mt-3 flex flex-col bg-white/50 p-3 rounded-lg">
+          <Bubble role="user">remind me to call the vet tomorrow at 2pm</Bubble>
+          <Bubble role="nenrin">✅ Reminder set for tomorrow at 2 PM.</Bubble>
+          <Bubble role="user">remind me to take out the trash every Tuesday night</Bubble>
+          <Bubble role="nenrin">👍 Recurring reminder is set for every Tuesday.</Bubble>
+        </div>
+      </>
+    ),
+    icon: <Icon.Calendar className="text-[color:var(--nenrin-forest)]"/>,
+    cta: { label: "Next", intent: "next" },
+  },
+  {
+    title: "More Than a To-Do List",
+    body: (
+      <>
+        <p className="text-[15px] leading-relaxed">Get smart suggestions and guidance on your tasks.</p>
+        <div className="mt-3 flex flex-col bg-white/50 p-3 rounded-lg">
+          <Bubble role="user">todo: buy milk, bread, and eggs</Bubble>
+          <Bubble role="nenrin">🛒 Added to your Shopping list.</Bubble>
+          <Bubble role="user">I need to plan my trip to Bali</Bubble>
+          <Bubble role="nenrin">Great! A good first step is to decide on your budget and travel dates. Want to start there?</Bubble>
         </div>
       </>
     ),
@@ -204,37 +244,31 @@ const cards = [
     cta: { label: "Next", intent: "next" },
   },
   {
-    title: "Pin the chat",
+    title: "Always Up-to-Date",
     body: (
       <>
-        <p className="text-[15px] leading-relaxed">Keep Nenrin handy so it’s there when you need it.</p>
-        <ul className="mt-3 text-[14px] space-y-2">
-          <li className="flex items-start gap-2"><Icon.Pin className="mt-0.5 flex-shrink-0"/> <span><strong>Android:</strong> Open Nenrin → tap <span aria-label="more">⋮</span> → <em>Pin chat</em>.</span></li>
-          <li className="flex items-start gap-2"><Icon.Pin className="mt-0.5 flex-shrink-0"/> <span><strong>iOS:</strong> Swipe right on Nenrin → <em>Pin</em>.</span></li>
-        </ul>
+        <p className="text-[15px] leading-relaxed">Connected to the internet to fetch the latest information for you.</p>
+        <div className="mt-3 flex flex-col bg-white/50 p-3 rounded-lg">
+          <Bubble role="user">what are the top movies in Indonesia right now?</Bubble>
+          <Bubble role="nenrin">Currently, "Agak Laen" and "Badarawuhi di Desa Penari" are very popular at the box office.</Bubble>
+        </div>
       </>
     ),
-    icon: <Icon.Pin className="text-[color:var(--nenrin-forest)]"/>,
-    cta: { label: "Got it", intent: "next" },
+    icon: <Icon.Globe className="text-[color:var(--nenrin-forest)]"/>,
+    cta: { label: "Next", intent: "next" },
   },
   {
-    title: "Two Ways to Use Nenrin",
+    title: "Your Personal Assistant",
     body: (
       <>
-        <p className="text-[15px] leading-relaxed">Choose how you want Nenrin to interact with you.</p>
-        <ul className="mt-3 text-[14px] space-y-2">
-          <li className="flex items-start gap-2">
-            <Icon.Mute className="mt-0.5 flex-shrink-0 text-[color:var(--nenrin-forest)]/70"/>
-            <span><strong>Silent Mode:</strong> Only replies and summarizes at specific times you set.</span>
-          </li>
-          <li className="flex items-start gap-2">
-            <Icon.Chat className="mt-0.5 flex-shrink-0 text-[color:var(--nenrin-forest)]/70"/>
-            <span><strong>Chat Mode (default):</strong> Always replies to your chat instantly.</span>
-          </li>
-        </ul>
+        <p className="text-[15px] leading-relaxed">Set your assistant's personality. Nenrin adapts to your style.</p>
+        <div className="mt-3 flex flex-col bg-white/50 p-3 rounded-lg">
+          <Bubble role="user">Hey Nenrin, tolong selalu jawab dengan bahasa indonesia, dan pake emoji ya</Bubble>
+          <Bubble role="nenrin">Tentu saja! Mulai sekarang, saya akan selalu membalas dalam Bahasa Indonesia dan pakai emoji! Ada yang bisa saya bantu? 😊</Bubble>
+        </div>
       </>
     ),
-    icon: <Icon.Bell className="text-[color:var(--nenrin-forest)]"/>,
+    icon: <Icon.Wand className="text-[color:var(--nenrin-forest)]"/>,
     cta: { label: "Next", intent: "next" },
   },
   {
@@ -242,11 +276,6 @@ const cards = [
     body: (
       <>
         <p className="text-[15px] leading-relaxed">Start your rings of progress. We’ll keep things clear and calm.</p>
-        {OPTIONAL_QR_SRC ? (
-          <div className="mt-4 grid place-items-center">
-            <img src={OPTIONAL_QR_SRC} alt="Scan to open Nenrin on WhatsApp" className="h-32 w-32 rounded-lg border border-black/10 shadow-sm" />
-          </div>
-        ) : null}
       </>
     ),
     icon: <Icon.Spark className="text-[color:var(--nenrin-forest)]"/>,
@@ -256,17 +285,18 @@ const cards = [
 ];
 
 // ----------------- Main Component -----------------
-export default function App(){
+export default function NenrinOnboarding(){
   const { dismissed, complete } = useOnlyOnce();
   const [index, setIndex] = useState(0);
   const total = cards.length;
   const step = cards[index];
 
-  // Function to send the initial welcome message via a Supabase function
+  // Function to send the initial welcome message via the backend
   const sendWelcomeMessage = async () => {
     const phoneNumber = WHATSAPP_NUMBER;
     try {
       console.log('Sending welcome message to new user:', phoneNumber);
+      // NOTE: Replace with your actual backend URL
       const response = await fetch('https://heagzwnxlcvpwglyuoyg.supabase.co/functions/v1/send-welcome-message', {
         method: 'POST',
         headers: {
@@ -276,9 +306,11 @@ export default function App(){
       });
       
       if (!response.ok) {
-        console.warn('Failed to send welcome message, but continuing with signup');
+        const errorData = await response.json();
+        console.warn('Failed to send welcome message:', errorData);
       } else {
-        console.log('Welcome message sent successfully');
+        const data = await response.json();
+        console.log('Welcome message sent successfully:', data);
       }
     } catch (error) {
       console.warn('Error sending welcome message:', error, 'but continuing with signup');

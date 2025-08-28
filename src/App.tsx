@@ -9,6 +9,7 @@ import SuccessPage from './pages/SuccessPage'
 import SimplifiedLoginPage from './pages/SimplifiedLoginPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
+import NenrinOnboarding from './pages/NenrinOnboarding';
 import './index.css'
 
 function App() {
@@ -26,6 +27,8 @@ function App() {
             <Route path="/success" element={<SuccessPage />} />
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/onboarding" element={<NenrinOnboarding />} />
+            
           </Routes>
         </div>
       </Router>
