@@ -496,15 +496,11 @@ Deno.serve(async (req) => {
               .insert([
                 {
                   user_id: userId,
-                  brain_data_type: 'communication_Style', // Ensure this enum value exists in your DB
-                  content: defaultBrainMemoryContent, // This is the JSON object you provided
+                  brain_data_type: 'communication_Style', 
+                  content: "you are a helpful assistant", 
                   importance: 5,
-                  // created_at and updated_at will be set by default by your table definition
-                  // If 'content_json' is meant for the string description you provided ("Bahasa Indonesia..."),
-                  // you'd add it here, assuming its column type in the DB is TEXT, not JSONB.
-                  // For now, I'm assuming 'content' (jsonb) is for the structured JSON data.
-                  // If your table truly has two jsonb columns ('content' and 'content_json') and you
-                  // want to use both, you'd need to clarify their intended usage.
+                   content_json:defaultBrainMemoryContent,
+
                 },
               ]);
 
