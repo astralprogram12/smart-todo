@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 // This interface defines the structure for a single chat message.
 interface Message {
@@ -14,8 +15,7 @@ interface ConversationDemo {
 }
 
 // Data structure containing all conversation demos (no changes here)
-const conversationDemos: ConversationDemo[] = [
-  // English
+const englishDemos: ConversationDemo[] = [
   { title: "Simple Reminder", messages: [ { sender: "user", content: "Remind me to drink water in 1 hour.", timestamp: "3:11 PM" }, { sender: "nenrin", content: "Of course! 💧 Reminder set for an hour from now.", timestamp: "3:11 PM" }] },
   { title: "Reminder Delivery", messages: [ { sender: "nenrin", content: "Reminder: Time to drink some water! 💧", timestamp: "4:11 PM" }, { sender: "user", content: "Thanks, Nenrin!", timestamp: "4:11 PM" }] },
   { title: "To-Do List", messages: [ { sender: "user", content: "Add 'Finish quarterly report' to my to-do list.", timestamp: "1:20 PM" }, { sender: "nenrin", content: "Added to your tasks! 🎁 Let's get it done.", timestamp: "1:20 PM" }] },
@@ -26,7 +26,9 @@ const conversationDemos: ConversationDemo[] = [
   { title: "Journaling", messages: [ { sender: "user", content: "Journal: Today's meeting was very productive.", timestamp: "5:00 PM" }, { sender: "nenrin", content: "Noted in your journal! 📝", timestamp: "5:00 PM" }] },
   { title: "General Knowledge", messages: [ { sender: "user", content: "What's the capital of Nepal?", timestamp: "11:00 AM" }, { sender: "nenrin", content: "The capital of Nepal is Kathmandu! 🏔️", timestamp: "11:00 AM" }] },
   { title: "Task Summary", messages: [ { sender: "user", content: "Summarize my tasks for today.", timestamp: "9:00 AM" }, { sender: "nenrin", content: "Today's tasks: 'Finish quarterly report'. Anything else, The Boss? 🫡", timestamp: "9:01 AM" }] },
-  // Indonesian
+];
+
+const indonesianDemos: ConversationDemo[] = [
   { title: "Pengingat Sholat", messages: [ { sender: "user", content: "Ingatkan saya untuk sholat Ashar.", timestamp: "3:15 PM" }, { sender: "nenrin", content: "Tentu! Pengingat sholat Ashar sudah diatur. 🙏", timestamp: "3:15 PM" }] },
   { title: "Pengingat Terkirim", messages: [ { sender: "nenrin", content: "Pengingat: Sudah masuk waktu sholat Ashar. 🙏", timestamp: "3:30 PM" }, { sender: "user", content: "Terima kasih, Nenrin.", timestamp: "3:30 PM" }] },
   { title: "Daftar Tugas", messages: [ { sender: "user", content: "todo: Beli kado untuk ulang tahun Ibu.", timestamp: "10:00 AM" }, { sender: "nenrin", content: "Sudah masuk daftar tugas! 🎁 Jangan sampai lupa ya.", timestamp: "10:00 AM" }] },
@@ -120,9 +122,13 @@ function PhoneMockup({ conversation, title }: { conversation: Message[], title: 
 
 // --- REWRITTEN ChatDemo COMPONENT WITH SHUFFLE LOGIC ---
 export default function ChatDemo() {
+  const { i18n } = useTranslation();
   const [playhead, setPlayhead] = useState(0);
+
+  const activeDemos = i18n.language.startsWith('id') ? indonesianDemos : englishDemos;
+
   const [shuffledIndices, setShuffledIndices] = useState(() => 
-    createShuffledIndices(conversationDemos.length)
+    createShuffledIndices(activeDemos.length)
   );
 
   useEffect(() => {
@@ -133,10 +139,10 @@ export default function ChatDemo() {
       if (nextPlayhead >= shuffledIndices.length) {
         // Time to reshuffle for the next cycle
         const lastIndex = shuffledIndices[shuffledIndices.length - 1];
-        let newShuffledIndices = createShuffledIndices(conversationDemos.length);
+        let newShuffledIndices = createShuffledIndices(activeDemos.length);
 
         // Optional: Ensure the new cycle doesn't start with the same item it ended on
-        if (newShuffledIndices[0] === lastIndex) {
+        if (newShuffledIndices.length > 1 && newShuffledIndices[0] === lastIndex) {
           // A simple fix: swap the first and last elements of the new list
           [newShuffledIndices[0], newShuffledIndices[newShuffledIndices.length - 1]] = 
           [newShuffledIndices[newShuffledIndices.length - 1], newShuffledIndices[0]];
@@ -151,11 +157,11 @@ export default function ChatDemo() {
     }, 4000); // Cycle every 4 seconds
 
     return () => clearInterval(interval);
-  }, [playhead, shuffledIndices]); // Re-run effect if playhead or the list itself changes
+  }, [playhead, shuffledIndices, activeDemos]); // Re-run effect if playhead or the list itself changes
 
   // Determine the actual index to display from our shuffled list
   const currentIndex = shuffledIndices[playhead];
-  const currentDemo = conversationDemos[currentIndex];
+  const currentDemo = activeDemos[currentIndex];
 
   return (
     <div>
