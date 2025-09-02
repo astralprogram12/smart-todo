@@ -10,6 +10,7 @@ import SimplifiedLoginPage from './pages/SimplifiedLoginPage'
 import LandingPage from './pages/LandingPage'
 import DashboardPage from './pages/DashboardPage'
 import NenrinOnboarding from './pages/NenrinOnboarding';
+import ProtectedRoute from './components/ProtectedRoute';
 import './index.css'
 
 function App() {
@@ -26,9 +27,8 @@ function App() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/success" element={<SuccessPage />} />
             <Route path="/landing" element={<LandingPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/onboarding" element={<NenrinOnboarding />} />
-            
+            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><NenrinOnboarding /></ProtectedRoute>} />
           </Routes>
         </div>
       </Router>
