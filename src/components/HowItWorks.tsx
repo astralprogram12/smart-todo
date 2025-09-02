@@ -1,21 +1,23 @@
 import { Link } from "react-router-dom"
+import { useTranslation } from "react-i18next"
 
 export function HowItWorks() {
+  const { t } = useTranslation()
   const steps = [
     {
       number: "01",
-      title: "Create Your Account",
-      description: "Sign up in seconds with just your phone number.",
+      title: t('step1_title'),
+      description: t('step1_desc'),
     },
     {
       number: "02",
-      title: "Add Your Tasks",
-      description: "Simply tell Nenrin what you need to do. Add subtasks...",
+      title: t('step2_title'),
+      description: t('step2_desc'),
     },
     {
       number: "03",
-      title: "Invite Your Team",
-      description: "Ready to collaborate? Just invite others to a project...",
+      title: t('step3_title'),
+      description: t('step3_desc'),
     },
   ]
 
@@ -38,14 +40,14 @@ export function HowItWorks() {
       <div className="max-w-6xl mx-auto relative">
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 bg-[var(--nenrin-bark)] rounded-full mb-8">
-            <span className="font-body text-sm text-white">How It Works</span>
+            <span className="font-body text-sm text-white">{t('how_it_works')}</span>
           </div>
 
           <h2 className="font-heading font-bold text-3xl lg:text-4xl text-[var(--nenrin-ink)] mb-6">
-            Simple Process, Powerful Results
+            {t('how_it_works_title')}
           </h2>
           <p className="font-body text-[var(--nenrin-sage)] max-w-3xl mx-auto text-lg">
-            Get started in seconds and see the difference our platform can make for your productivity.
+            {t('how_it_works_subtitle')}
           </p>
         </div>
 
@@ -84,7 +86,7 @@ export function HowItWorks() {
             to="/features" 
             className="inline-flex items-center px-8 py-3 bg-[var(--nenrin-forest)] text-white font-body font-medium rounded-lg hover:bg-[var(--nenrin-forest)]/90 transition-colors duration-200"
           >
-            See All Features
+            {t('see_all_features')}
           </Link>
         </div>
       </div>

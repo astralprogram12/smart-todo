@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next"
+
 export function TrustedCompanies() {
+  const { t } = useTranslation()
   const companies = [
     { name: "Google", logo: "/logos/google.svg" },
     { name: "Microsoft", logo: "/logos/microsoft.svg" },
@@ -12,7 +15,7 @@ export function TrustedCompanies() {
     <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         <p className="text-center text-[var(--nenrin-sage)] text-sm font-medium mb-12">
-          Trusted by teams at leading companies
+          {t('trusted_by')}
         </p>
         
         <div className="grid grid-cols-2 md:grid-cols-6 gap-8 items-center opacity-60">
