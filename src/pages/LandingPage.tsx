@@ -5,11 +5,13 @@ import { Button } from '../components/ui/button'
 import { Header } from '../components/Header'
 import Footer from '../components/Footer'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle, User, LogOut, Phone, CalendarDays, Star, Beaker, Bug, FileWarning, Info, Clock } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function LandingPage() {
+  const { t } = useTranslation()
   const { user, session, loading, signOut, isTestMode } = useAuth()
   const navigate = useNavigate()
   const [lastLoginDate, setLastLoginDate] = useState<string>(new Date().toLocaleString())
@@ -214,10 +216,10 @@ export default function LandingPage() {
             ) : (
               <>
                 <h2 className="mt-6 text-3xl font-bold text-[var(--nenrin-bark)]">
-                  Welcome back!
+                  {t('welcome_back')}
                 </h2>
                 <p className="mt-2 text-[var(--nenrin-sage)]">
-                  It's good to see you again. Here's your account information.
+                  {t('welcome_back_message')}
                 </p>
               </>
             )}

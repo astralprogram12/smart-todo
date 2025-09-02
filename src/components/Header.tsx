@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
 import { Button } from "../components/ui/button"
 import { useAuth } from "../contexts/AuthContext"
@@ -8,6 +9,11 @@ import { useAuth } from "../contexts/AuthContext"
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const { user, signOut } = useAuth()
+  const { i18n } = useTranslation()
+
+  const changeLanguage = (lng: string) => {
+    i18n.changeLanguage(lng)
+  }
 
   useEffect(() => {
     const handleScroll = () => {
@@ -58,6 +64,14 @@ export function Header() {
 
           {/* Auth buttons */}
           <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => changeLanguage(i18n.language === "en" ? "id" : "en")}
+              variant="outline"
+              className="font-body"
+              data-testid="language-switcher"
+            >
+              {i18n.language === "en" ? "EN" : "ID"}
+            </Button>
             {user ? (
               <>
                 <span className="font-body text-[var(--nenrin-ink)]">Welcome back!</span>
