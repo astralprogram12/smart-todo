@@ -3,67 +3,70 @@
 import { Button } from "../components/ui/button"
 import { Check, X } from "lucide-react"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 
-const plans = [
+const plans = (t: (key: string) => string) => [
   {
-    name: "Free",
-    description: "For getting started.",
+    name: t('plan_free'),
+    description: t('plan_free_desc'),
     monthlyPrice: 0,
     yearlyPrice: 0,
     period: "",
     popular: false,
-    cta: "Get started",
+    cta: t('plan_free_cta'),
     features: [
-      { name: "Conversational AI Actions", value: "15 / day" },
-      { name: "Automated Workflows", value: "2" },
-      { name: "Reminder Granularity", value: "Hourly" },
-      { name: "Time Tracking & Reports", included: false },
-      { name: "Trash Retention", value: "7 days" },
-      { name: "Projects", included: false },
+      { name: t('feature_conversational_ai'), value: "15 / day" },
+      { name: t('feature_automated_workflows'), value: "2" },
+      { name: t('feature_reminder_granularity'), value: "Hourly" },
+      { name: t('feature_time_tracking'), included: false },
+      { name: t('feature_trash_retention'), value: "7 days" },
+      { name: t('feature_projects'), included: false },
     ],
   },
   {
-    name: "Pro",
-    description: "Most Popular · For professionals & power users.",
+    name: t('plan_pro'),
+    description: t('plan_pro_desc'),
     monthlyPrice: "TBA",
     yearlyPrice: "TBA",
-    period: "/ month",
+    period: t('per_month'),
     popular: true,
-    cta: "Start 7‑day trial",
+    cta: t('plan_pro_cta'),
     features: [
-      { name: "Conversational AI Actions", value: "150 / day" },
-      { name: "Automated Workflows", value: "10" },
-      { name: "Reminder Granularity", value: "Per minute" },
-      { name: "Time Tracking & Reports", value: "Advanced" },
-      { name: "Trash Retention", value: "90 days" },
-      { name: "Projects", value: "1" },
-      { name: "Members included", value: "2" },
+      { name: t('feature_conversational_ai'), value: "150 / day" },
+      { name: t('feature_automated_workflows'), value: "10" },
+      { name: t('feature_reminder_granularity'), value: "Per minute" },
+      { name: t('feature_time_tracking'), value: "Advanced" },
+      { name: t('feature_trash_retention'), value: "90 days" },
+      { name: t('feature_projects'), value: "1" },
+      { name: t('members_included'), value: "2" },
     ],
   },
   {
-    name: "Team",
-    description: "For collaborative projects.",
+    name: t('plan_team'),
+    description: t('plan_team_desc'),
     monthlyPrice: "TBA",
     yearlyPrice: "TBA",
-    period: "/ team / month",
+    period: t('per_team_per_month'),
     popular: false,
-    cta: "Start 14‑day trial",
+    cta: t('plan_team_cta'),
     features: [
-      { name: "Conversational AI Actions", value: "1,000 / day" },
-      { name: "Automated Workflows", value: "50" },
-      { name: "Reminder Granularity", value: "Per minute" },
-      { name: "Time Tracking & Reports", value: "Advanced" },
-      { name: "Trash Retention", value: "90 days" },
-      { name: "Projects", value: "10" },
-      { name: "Members included", value: "5" },
-      { name: "Roles & Permissions", included: true },
-      { name: "Project Budgets", included: true },
+      { name: t('feature_conversational_ai'), value: "1,000 / day" },
+      { name: t('feature_automated_workflows'), value: "50" },
+      { name: t('feature_reminder_granularity'), value: "Per minute" },
+      { name: t('feature_time_tracking'), value: "Advanced" },
+      { name: t('feature_trash_retention'), value: "90 days" },
+      { name: t('feature_projects'), value: "10" },
+      { name: t('members_included'), value: "5" },
+      { name: t('feature_roles_permissions'), included: true },
+      { name: t('feature_project_budgets'), included: true },
     ],
   },
 ]
 
 export function PricingSection() {
+  const { t } = useTranslation()
   const [isYearly, setIsYearly] = useState(false)
+  const translatedPlans = plans(t)
 
   return (
     <section id="pricing" className="py-24 px-4 pricing-rings">
@@ -71,11 +74,11 @@ export function PricingSection() {
         {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 rounded-full bg-[var(--nenrin-bark)] text-white text-sm font-medium mb-6">
-            Pricing
+            {t('pricing')}
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-[var(--nenrin-ink)] mb-4">Simple, Transparent Pricing</h1>
+          <h1 className="text-4xl md:text-5xl font-bold text-[var(--nenrin-ink)] mb-4">{t('pricing_title')}</h1>
           <p className="text-lg text-[var(--nenrin-sage)] max-w-2xl mx-auto mb-8">
-            Choose the perfect plan for your productivity needs. Start free and upgrade as you grow.
+            {t('pricing_subtitle')}
           </p>
 
           {/* Monthly/Yearly Toggle */}
@@ -88,7 +91,7 @@ export function PricingSection() {
                   : "border-[var(--nenrin-mist)] bg-white text-[var(--nenrin-sage)] hover:border-[var(--nenrin-sage)]"
               }`}
             >
-              Monthly
+              {t('monthly')}
             </button>
             <button
               onClick={() => setIsYearly(true)}
@@ -98,11 +101,11 @@ export function PricingSection() {
                   : "border-[var(--nenrin-mist)] bg-white text-[var(--nenrin-sage)] hover:border-[var(--nenrin-sage)]"
               }`}
             >
-              Yearly
+              {t('yearly')}
             </button>
             {isYearly && (
               <span className="bg-[var(--nenrin-forest)] text-white px-3 py-1 rounded-full text-xs font-medium ml-3">
-                Save 20%
+                {t('save_20_percent')}
               </span>
             )}
           </div>
@@ -110,7 +113,7 @@ export function PricingSection() {
 
         {/* Pricing Cards */}
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {plans.map((plan, index) => {
+          {translatedPlans.map((plan, index) => {
             const currentPrice = isYearly ? plan.yearlyPrice : plan.monthlyPrice
             const displayPrice = currentPrice === 0 ? "$0" : currentPrice === "TBA" ? "TBA" : `$${currentPrice}`
 
@@ -126,7 +129,7 @@ export function PricingSection() {
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                     <span className="bg-[var(--nenrin-forest)] text-white px-4 py-2 rounded-full text-sm font-medium">
-                      Most Popular
+                      {t('most_popular')}
                     </span>
                   </div>
                 )}
@@ -174,7 +177,7 @@ export function PricingSection() {
 
         <div className="text-center mt-12">
           <p className="text-[var(--nenrin-sage)] text-sm">
-            All plans include our core AI productivity features and 24/7 support.
+            {t('all_plans_include')}
           </p>
         </div>
       </div>

@@ -1,24 +1,27 @@
+import { useTranslation } from "react-i18next"
+
 export function TestimonySection() {
+  const { t } = useTranslation()
   const testimonials = [
     {
-      name: "Sarah Chen",
-      title: "Product Manager",
-      company: "TechCorp",
-      content: "Nenrin has completely transformed how I manage my daily tasks. The natural language interface makes it feel like I'm talking to a colleague rather than using software.",
+      name: t('testimonial1_name'),
+      title: t('testimonial1_title'),
+      company: t('testimonial1_company'),
+      content: t('testimonial1_content'),
       avatar: "SC"
     },
     {
-      name: "Marcus Johnson",
-      title: "Freelance Designer",
-      company: "Independent",
-      content: "The time tracking and project organization features are incredible. I've increased my productivity by 40% since switching to Nenrin.",
+      name: t('testimonial2_name'),
+      title: t('testimonial2_title'),
+      company: t('testimonial2_company'),
+      content: t('testimonial2_content'),
       avatar: "MJ"
     },
     {
-      name: "Elena Rodriguez",
-      title: "Team Lead",
-      company: "StartupXYZ",
-      content: "Our team collaboration has never been smoother. Nenrin makes it easy to keep everyone aligned and on track with our goals.",
+      name: t('testimonial3_name'),
+      title: t('testimonial3_title'),
+      company: t('testimonial3_company'),
+      content: t('testimonial3_content'),
       avatar: "ER"
     }
   ]
@@ -28,13 +31,13 @@ export function TestimonySection() {
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
           <div className="inline-flex items-center px-4 py-2 bg-[var(--nenrin-bark)] rounded-full mb-8">
-            <span className="font-body text-sm text-white">Testimonials</span>
+            <span className="font-body text-sm text-white">{t('testimonials')}</span>
           </div>
           <h2 className="font-heading font-bold text-3xl lg:text-4xl text-[var(--nenrin-ink)] mb-6">
-            Loved by thousands of users
+            {t('testimonials_title')}
           </h2>
           <p className="font-body text-[var(--nenrin-sage)] max-w-3xl mx-auto text-lg">
-            See what our users have to say about their experience with Nenrin.
+            {t('testimonials_subtitle')}
           </p>
         </div>
 
@@ -50,7 +53,7 @@ export function TestimonySection() {
                 </div>
                 <div>
                   <p className="font-semibold text-[var(--nenrin-ink)]">{testimonial.name}</p>
-                  <p className="text-[var(--nenrin-sage)] text-sm">{testimonial.title} at {testimonial.company}</p>
+                  <p className="text-[var(--nenrin-sage)] text-sm">{testimonial.title} {t('at')} {testimonial.company}</p>
                 </div>
               </div>
             </div>

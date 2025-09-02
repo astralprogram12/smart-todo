@@ -9,10 +9,12 @@ import { TestimonySection } from '../components/TestimonySection'
 import Footer from '../components/Footer'
 import { Button } from '../components/ui/button'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 // FIX 1: Corrected the import path from '../../' to '../'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function HomePage() {
+  const { t } = useTranslation()
   // FIX 2: Use `user` and `signOut` from your actual AuthContext
   const { user, signOut } = useAuth();
 
@@ -38,11 +40,10 @@ export default function HomePage() {
             <div className="space-y-8">
               <div className="space-y-6">
                 <h1 className="font-heading font-bold text-[40px] lg:text-[48px] text-[var(--nenrin-bark)] leading-tight tracking-[0.02em]">
-                  {user ? `Welcome back!` : 'Grow your progress, one ring at a time.'}
+                  {user ? t('homepage_title_logged_in') : t('homepage_title_logged_out')}
                 </h1>
                 <p className="font-body text-[18px] text-[#0E0F10] leading-[1.5] max-w-xl">
-                  Nenrin helps you work with focus, not frenzy — guiding your day in plain language so you can make
-                  steady, lasting progress.
+                  {t('homepage_subtitle')}
                 </p>
               </div>
 
@@ -55,7 +56,7 @@ export default function HomePage() {
                     onClick={handleLogout} // Call the correct handler
                     className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-4 text-lg rounded-lg transition-all duration-200 hover:shadow-lg"
                   >
-                    Sign Out
+                    {t('sign_out')}
                   </Button>
                 ) : (
                   // If the user is NOT logged in, show the original signup button
@@ -65,10 +66,10 @@ export default function HomePage() {
                         size="lg"
                         className="bg-[var(--nenrin-forest)] hover:bg-[var(--forest-hover)] text-white font-semibold px-8 py-4 text-lg rounded-lg transition-all duration-200 hover:shadow-lg hover:brightness-105"
                       >
-                        Get started with WhatsApp
+                        {t('get_started_whatsapp')}
                       </Button>
                     </Link>
-                    <p className="font-body text-sm text-[var(--nenrin-ink)]/70">Secure signup with your WhatsApp number. No passwords required.</p>
+                    <p className="font-body text-sm text-[var(--nenrin-ink)]/70">{t('secure_signup_info')}</p>
                   </>
                 )}
               </div>
