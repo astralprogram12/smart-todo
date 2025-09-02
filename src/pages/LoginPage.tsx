@@ -10,8 +10,10 @@ import { SimplifiedOTPVerification } from '../components/SimplifiedOTPVerificati
 import PhoneInput from 'react-phone-number-input'
 import { useAuth } from '../contexts/AuthContext'
 import 'react-phone-number-input/style.css'
+import { useTranslation } from 'react-i18next'
 
 export default function LoginPage() {
+  const { t } = useTranslation()
   const [phoneNumber, setPhoneNumber] = useState<string | undefined>()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -140,10 +142,10 @@ export default function LoginPage() {
               <Smartphone className="w-8 h-8 text-white" />
             </div>
             <h2 className="mt-6 text-3xl font-bold text-[var(--nenrin-bark)]">
-              Welcome back
+              {t('login_welcome')}
             </h2>
             <p className="mt-2 text-sm text-[var(--nenrin-sage)]">
-              Sign in with your WhatsApp number
+              {t('login_instruction')}
             </p>
           </div>
 
