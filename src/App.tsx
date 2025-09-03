@@ -12,8 +12,8 @@ import DashboardPage from './pages/DashboardPage'
 import NenrinOnboarding from './pages/NenrinOnboarding';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleCallbackSuccessPage from './pages/GoogleCallbackSuccessPage';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage.tsx';
+import TermsOfServicePage from './pages/TermsOfServicePage.tsx';
 import './index.css'
 
 function App() {
