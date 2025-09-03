@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { Button } from "../components/ui/button";
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../lib/supabase";
 
 /**
  * Nenrin — First Dashboard (Functionless, WhatsApp Guide)
@@ -842,6 +846,21 @@ function Home() {
 
 // ----------------- Main -----------------
 function NenrinFirstDashboard(){
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/login');
+  };
+
+  const handleConnectGoogleCalendar = async () => {
+    const { data } = supabase.functions.getURL('google-calendar-integration', {
+      path: '/oauth-start',
+    });
+    window.location.href = data.url;
+  };
+
   return (
     <main className="relative min-h-[100vh] w-full">
       <BrandCSS/>
@@ -850,10 +869,12 @@ function NenrinFirstDashboard(){
       <header className="enhanced-header sticky top-0 z-10 max-w-5xl mx-auto px-6 py-6 flex items-center justify-between animate-fadeInScale">
           <NenrinLogo size={48}/>
           <div className="flex items-center gap-4">
-            <span className="chip animate-fadeInScale" style={{ animationDelay: "0.5s" }}>
-              <Icon.Spark width="14" height="14" className="animate-sparkle"/> 
-              New branches are growing... Dashboard coming soon.
-            </span>
+            <Button onClick={handleConnectGoogleCalendar} variant="outline">
+              Connect to Google Calendar
+            </Button>
+            <Button onClick={handleLogout}>
+              Logout
+            </Button>
           </div>
       </header>
 
