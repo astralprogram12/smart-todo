@@ -855,10 +855,9 @@ function NenrinFirstDashboard(){
   };
 
   const handleConnectGoogleCalendar = async () => {
-    const { data } = supabase.functions.getURL('google-calendar-integration', {
-      path: '/oauth-start',
-    });
-    window.location.href = data.url;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const functionUrl = `${supabaseUrl}/functions/v1/google-calendar-integration/oauth-start`;
+    window.location.href = functionUrl;
   };
 
   return (
