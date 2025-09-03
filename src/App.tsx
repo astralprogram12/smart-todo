@@ -12,6 +12,8 @@ import DashboardPage from './pages/DashboardPage'
 import NenrinOnboarding from './pages/NenrinOnboarding';
 import ProtectedRoute from './components/ProtectedRoute';
 import GoogleCallbackSuccessPage from './pages/GoogleCallbackSuccessPage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfServicePage from './pages/TermsOfServicePage';
 import './index.css'
 
 function App() {
@@ -31,6 +33,8 @@ function App() {
             <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><NenrinOnboarding /></ProtectedRoute>} />
             <Route path="/google-callback-success" element={<ProtectedRoute><GoogleCallbackSuccessPage /></ProtectedRoute>} />
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
           </Routes>
         </div>
       </Router>
