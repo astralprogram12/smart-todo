@@ -20,7 +20,7 @@ export default function SimplifiedLoginPage() {
   const [rememberMe, setRememberMe] = useState(false)
 
   
-  const { sendSimplifiedWhatsAppOTP } = useAuth()
+  const { sendSimplifiedWhatsAppOTP, setAuthSession } = useAuth()
   const navigate = useNavigate()
 
   // Check for remembered login on component mount
@@ -119,7 +119,11 @@ export default function SimplifiedLoginPage() {
     }
   }
 
-  const handleOTPVerified = (data: any) => {
+  const handleOTPVerified = async (data: any) => {
+    if (data.session) {
+      await setAuthSession(data.session)
+    }
+
     // Store first login status and plan info
     if (data?.is_first_login !== undefined) {
       sessionStorage.setItem('is_first_login', data.is_first_login.toString())

@@ -15,6 +15,7 @@ interface AuthContextType {
   signOut: () => Promise<any>
   isTestMode: boolean
   setTestMode: (enable: boolean) => void
+  setAuthSession: (session: Session) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -96,6 +97,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return await whatsappAuth.signOut()
   }
 
+  async function setAuthSession(sessionData: Session) {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: sessionData.access_token,
+      refresh_token: sessionData.refresh_token,
+    })
+
+    if (error) {
+      console.error('Failed to set session:', error)
+      return
+    }
+
+    setSession(data.session)
+    setUser(data.user)
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -107,7 +123,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       verifySimplifiedWhatsAppOTP,
       signOut,
       isTestMode,
-      setTestMode
+      setTestMode,
+      setAuthSession
     }}>
       {children}
     </AuthContext.Provider>
