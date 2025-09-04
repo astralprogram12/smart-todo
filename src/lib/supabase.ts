@@ -21,7 +21,6 @@ export const whatsappAuth = {
 
   /**
    * Enables or disables test mode for OTP functions.
-   * When enabled, API calls might behave differently as defined in your Edge Functions.
    * @param {boolean} enable - Set to true to enable test mode. Defaults to true.
    */
   enableTestMode: (enable = true) => {
@@ -38,7 +37,6 @@ export const whatsappAuth = {
 
   /**
    * Calls the Edge Function to send an OTP to the user's WhatsApp.
-   * This is the primary function for initiating a login or signup.
    * @param {string} phone - The user's phone number.
    * @param {boolean} demoMode - Flag for demo purposes.
    * @param {boolean} signupMode - Flag to indicate if this is for a new user signup.
@@ -47,7 +45,7 @@ export const whatsappAuth = {
   sendSimplifiedOTP: async (phone: string, demoMode = false, signupMode = false) => {
     try {
       const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-send-otp', {
-        // ✅ FIX: The required 'apikey' header to prevent 401 Unauthorized errors.
+        // ✅ The required 'apikey' header to prevent 401 Unauthorized errors.
         headers: {
           'apikey': supabaseAnonKey,
         },
@@ -81,7 +79,7 @@ export const whatsappAuth = {
   verifySimplifiedOTP: async (phone: string, code: string, skipVerification = false, signupMode = false) => {
     try {
       const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-verify-otp', {
-        // ✅ FIX: The required 'apikey' header to prevent 401 Unauthorized errors.
+        // ✅ The required 'apikey' header to prevent 401 Unauthorized errors.
         headers: {
           'apikey': supabaseAnonKey,
         },
@@ -138,4 +136,4 @@ export const whatsappAuth = {
       return null
     }
   },
-} // This is the closing brace for the 'whatsappAuth' object.
+}
