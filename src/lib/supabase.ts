@@ -17,24 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
  * This keeps the authentication calls clean and separate from other Supabase interactions.
  */
 export const whatsappAuth = {
-  _testMode: false,
-
-  /**
-   * Enables or disables test mode for OTP functions.
-   * @param {boolean} enable - Set to true to enable test mode. Defaults to true.
-   */
-  enableTestMode: (enable = true) => {
-    whatsappAuth._testMode = enable
-    console.log(`Test mode has been ${enable ? 'enabled' : 'disabled'}.`)
-    return enable
-  },
-
-  /**
-   * Checks if test mode is currently enabled.
-   * @returns {boolean} - True if test mode is on.
-   */
-  isTestMode: () => whatsappAuth._testMode,
-
   /**
    * Calls the Edge Function to send an OTP to the user's WhatsApp.
    * @param {string} phone - The user's phone number.
@@ -51,7 +33,6 @@ export const whatsappAuth = {
         },
         body: {
           phone,
-          test_mode: whatsappAuth._testMode,
           demo_mode: demoMode,
           signup_mode: signupMode,
         },
@@ -86,7 +67,6 @@ export const whatsappAuth = {
         body: {
           phone,
           code,
-          test_mode: whatsappAuth._testMode,
           skip_verification: skipVerification,
           signup_mode: signupMode,
         },
@@ -137,3 +117,4 @@ export const whatsappAuth = {
     }
   },
 }
+
