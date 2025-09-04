@@ -1,118 +1,141 @@
-'use client'
+import { createClient } from '@supabase/supabase-js'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { User, Session } from '@supabase/supabase-js'
-import { supabase, whatsappAuth } from '../lib/supabase'
+// Get environment variables from Vite. Ensure they are correctly set in your .env file.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// 1. We remove the old function types from our interface
-interface AuthContextType {
-  user: User | null
-  session: Session | null
-  loading: boolean
-  sendSimplifiedWhatsAppOTP: (phone: string, demoMode?: boolean, signupMode?: boolean) => Promise<any>
-  verifySimplifiedWhatsAppOTP: (phone: string, code: string, skipVerification?: boolean, signupMode?: boolean) => Promise<any>
-  signOut: () => Promise<any>
-  isTestMode: boolean
-  setTestMode: (enable: boolean) => void
-  setAuthSession: (session: Session) => Promise<void>
+// A critical check to ensure the environment variables are loaded correctly.
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key must be provided in your .env file.')
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+// Create and export the Supabase client for use in other parts of your app.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [isTestMode, setIsTestMode] = useState(false)
+/**
+ * A dedicated object for handling all WhatsApp authentication logic.
+ * This keeps the authentication calls clean and separate from other Supabase interactions.
+ */
+export const whatsappAuth = {
+  _testMode: false,
 
-  // Load user on mount - this logic remains the same
-  useEffect(() => {
-    async function loadUser() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        setSession(session)
-        setUser(session?.user || null)
-      } finally {
-        setLoading(false)
+  /**
+   * Enables or disables test mode for OTP functions.
+   * When enabled, API calls might behave differently as defined in your Edge Functions.
+   * @param {boolean} enable - Set to true to enable test mode. Defaults to true.
+   */
+  enableTestMode: (enable = true) => {
+    whatsappAuth._testMode = enable
+    console.log(`Test mode has been ${enable ? 'enabled' : 'disabled'}.`)
+    return enable
+  },
+
+  /**
+   * Checks if test mode is currently enabled.
+   * @returns {boolean} - True if test mode is on.
+   */
+  isTestMode: () => whatsappAuth._testMode,
+
+  /**
+   * Calls the Edge Function to send an OTP to the user's WhatsApp.
+   * This is the primary function for initiating a login or signup.
+   * @param {string} phone - The user's phone number.
+   * @param {boolean} demoMode - Flag for demo purposes.
+   * @param {boolean} signupMode - Flag to indicate if this is for a new user signup.
+   * @returns {Promise<{data: any, error: any}>} - The response from the Edge Function.
+   */
+  sendSimplifiedOTP: async (phone: string, demoMode = false, signupMode = false) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-send-otp', {
+        // ✅ FIX: The required 'apikey' header to prevent 401 Unauthorized errors.
+        headers: {
+          'apikey': supabaseAnonKey,
+        },
+        body: {
+          phone,
+          test_mode: whatsappAuth._testMode,
+          demo_mode: demoMode,
+          signup_mode: signupMode,
+        },
+      })
+
+      if (error) {
+        throw error
       }
-    }
-    loadUser()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session)
-        setUser(session?.user || null)
-        setLoading(false)
+      return { data, error: null }
+    } catch (error) {
+      console.error('Error sending simplified OTP:', error)
+      return { data: null, error }
+    }
+  },
+
+  /**
+   * Calls the Edge Function to verify the OTP and authenticate the user.
+   * @param {string} phone - The user's phone number.
+   * @param {string} code - The OTP code from the user.
+   * @param {boolean} skipVerification - Flag to bypass OTP check (for internal/dev use).
+   * @param {boolean} signupMode - Flag to indicate if this is for a new user signup.
+   * @returns {Promise<{data: any, error: any}>} - The response from the Edge Function, which may include a session.
+   */
+  verifySimplifiedOTP: async (phone: string, code: string, skipVerification = false, signupMode = false) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-verify-otp', {
+        // ✅ FIX: The required 'apikey' header to prevent 401 Unauthorized errors.
+        headers: {
+          'apikey': supabaseAnonKey,
+        },
+        body: {
+          phone,
+          code,
+          test_mode: whatsappAuth._testMode,
+          skip_verification: skipVerification,
+          signup_mode: signupMode,
+        },
+      })
+
+      if (error) {
+        throw error
       }
-    )
-
-    return () => subscription.unsubscribe()
-  }, [])
-
-  function setTestMode(enable: boolean) {
-    setIsTestMode(enable)
-    whatsappAuth.enableTestMode(enable)
-  }
-  
-  // 2. We keep ONLY the new, simplified functions
-  async function sendSimplifiedWhatsAppOTP(phone: string, demoMode = false, signupMode = false) {
-    return await whatsappAuth.sendSimplifiedOTP(phone, demoMode, signupMode)
-  }
-
-  async function verifySimplifiedWhatsAppOTP(phone: string, code: string, skipVerification = false, signupMode = false) {
-    const response = await whatsappAuth.verifySimplifiedOTP(phone, code, skipVerification, signupMode)
-    
-    // If verification is successful and a session is returned, set it
-    if (response.data?.session) {
-        await setAuthSession(response.data.session)
+      
+      return { data, error: null }
+    } catch (error) {
+      console.error('Error verifying simplified OTP:', error)
+      return { data: null, error }
     }
-    
-    return response
-  }
+  },
 
-  async function signOut() {
-    return await whatsappAuth.signOut()
-  }
-
-  async function setAuthSession(sessionData: Session) {
-    const { data, error } = await supabase.auth.setSession({
-      access_token: sessionData.access_token,
-      refresh_token: sessionData.refresh_token,
-    })
-
-    if (error) {
-      console.error('Failed to set session:', error)
-      return
+  /**
+   * Signs out the current user from the Supabase session.
+   */
+  signOut: async () => {
+    try {
+      localStorage.removeItem('supabase.auth.token') // Proactively clear local session
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+    } catch (error) {
+      console.error('Error signing out:', error)
     }
+  },
 
-    setSession(data.session)
-    setUser(data.user)
-  }
+  /**
+   * Retrieves the current session from Supabase.
+   */
+  getSession: async () => {
+    return await supabase.auth.getSession()
+  },
 
-  // 3. We remove the old functions from the returned value object
-  const value = {
-    user,
-    session,
-    loading,
-    sendSimplifiedWhatsAppOTP,
-    verifySimplifiedWhatsAppOTP,
-    signOut,
-    isTestMode,
-    setTestMode,
-    setAuthSession
-  }
-
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
-}
+  /**
+   * Retrieves the current user data from Supabase.
+   */
+  getUser: async () => {
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error) throw error
+      return user
+    } catch (error) {
+      console.error('Error getting user:', error)
+      return null
+    }
+  },
+} // This is the closing brace for the 'whatsappAuth' object.
