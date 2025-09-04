@@ -1,83 +1,52 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Get environment variables from Vite with fallbacks for frontend-only deployment
+// Get environment variables from Vite. Make sure they are correctly set in your .env file
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-// Check if we're in frontend-only mode
-const isFrontendOnly = supabaseUrl.includes('placeholder') || supabaseAnonKey.includes('placeholder')
-
-if (isFrontendOnly) {
-  console.log('Running in frontend-only mode - Supabase features disabled')
+// A simple check to see if the environment variables are loaded
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Supabase URL and Anon Key must be provided in your .env file.')
 }
 
-// Create Supabase client
+// Create and export the Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Custom auth functions for WhatsApp authentication
+/**
+ * A collection of custom authentication functions for handling WhatsApp OTP login.
+ */
 export const whatsappAuth = {
-  // Test mode state
   _testMode: false,
 
-  // Toggle test mode
+  /**
+   * Enables or disables test mode for OTP functions.
+   * @param {boolean} enable - Set to true to enable test mode.
+   */
   enableTestMode: (enable = true) => {
     whatsappAuth._testMode = enable
-    console.log(`Test mode ${enable ? 'enabled' : 'disabled'}`)
+    console.log(`Test mode has been ${enable ? 'enabled' : 'disabled'}.`)
     return enable
   },
 
-  // Check if test mode is enabled
+  /**
+   * Checks if test mode is currently enabled.
+   * @returns {boolean}
+   */
   isTestMode: () => whatsappAuth._testMode,
 
-  // Send OTP code via WhatsApp
-  sendOTP: async (phone: string) => {
-    if (isFrontendOnly) {
-      console.log('Frontend-only mode: Simulating OTP send for', phone)
-      return {
-        data: { success: true, message: 'Demo mode: OTP would be sent to WhatsApp' },
-        error: null,
-      }
-    }
-
-    try {
-      const response = await supabase.functions.invoke('whatsapp-auth-send-otp', {
-        // ✅ FIX: Add the headers object here
-        headers: {
-          'apikey': supabaseAnonKey,
-        },
-        body: {
-          phone,
-          test_mode: whatsappAuth._testMode,
-        },
-      })
-
-      return response
-    } catch (error) {
-      console.error('Error sending OTP:', error)
-      throw error
-    }
-  },
-
-  // Send OTP code via simplified WhatsApp function with smart 10-minute rate limiting
+  /**
+   * Calls the Edge Function to send an OTP to the user's WhatsApp.
+   * This is the simplified version with smart rate limiting.
+   * @param {string} phone - The user's phone number.
+   * @param {boolean} demoMode - Flag for demo purposes.
+   * @param {boolean} signupMode - Flag to indicate if this is for a new user signup.
+   */
   sendSimplifiedOTP: async (phone: string, demoMode = false, signupMode = false) => {
-    if (isFrontendOnly) {
-      console.log('Frontend-only mode: Simulating simplified OTP send for', phone)
-      return {
-        data: {
-          success: true,
-          message: 'Demo mode: OTP would be sent to WhatsApp',
-          userMessage: 'Demo: Verification code would be sent to your WhatsApp number',
-          used_existing_otp: false,
-        },
-        error: null,
-      }
-    }
-
     try {
-      console.log('Sending simplified OTP to:', phone, '(Demo mode:', demoMode, ', Signup mode:', signupMode, ')')
+      console.log('Invoking simplified-whatsapp-auth-send-otp function...')
 
-      const response = await supabase.functions.invoke('simplified-whatsapp-auth-send-otp', {
-        // ✅ FIX: Add the headers object here
+      const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-send-otp', {
+        // ✅ FIX: The required 'apikey' header for authorization
         headers: {
           'apikey': supabaseAnonKey,
         },
@@ -89,153 +58,47 @@ export const whatsappAuth = {
         },
       })
 
+      if (error) {
+        throw error
+      }
+
       // Process the smart rate limiting response
-      if (response.data?.success) {
-        const usedExisting = response.data.used_existing_otp
-        const message = response.data.message
-        const otpAge = response.data.otp_age_minutes
+      if (data?.success) {
+        const usedExisting = data.used_existing_otp
+        const otpAge = data.otp_age_minutes
 
-        console.log('Smart OTP response:', {
-          message,
-          usedExisting,
-          otpAge,
-        })
-
-        // Return enhanced response with user-friendly message
+        // Return an enhanced response with a user-friendly message
         return {
-          ...response,
           data: {
-            ...response.data,
+            ...data,
             userMessage: usedExisting
-              ? `Please check your WhatsApp for the code sent ${otpAge} minute${otpAge !== 1 ? 's' : ''} ago`
-              : 'Verification code sent to your WhatsApp number',
+              ? `Please check your WhatsApp for the code sent ${otpAge} minute${otpAge !== 1 ? 's' : ''} ago.`
+              : 'A verification code has been sent to your WhatsApp number.',
           },
+          error: null,
         }
       }
 
-      return response
+      return { data, error }
     } catch (error) {
       console.error('Error sending simplified OTP:', error)
-      throw error
+      return { data: null, error }
     }
   },
 
-  // Verify OTP code and authenticate user
-  verifyOTP: async (phone: string, code: string, signupMode = false) => {
-    if (isFrontendOnly) {
-      console.log('Frontend-only mode: Simulating OTP verification for', phone)
-      // Simulate successful verification
-      return {
-        data: {
-          success: true,
-          message: 'Demo mode: OTP verification successful',
-          user: { phone, id: 'demo-user-id' },
-          is_first_login: true,
-          is_new_user: signupMode,
-        },
-        error: null,
-      }
-    }
-
-    try {
-      console.log('Verifying OTP:', { phone, code, testMode: whatsappAuth._testMode, signupMode })
-
-      const response = await supabase.functions.invoke('whatsapp-auth-verify-otp', {
-        // ✅ FIX: Add the headers object here
-        headers: {
-          'apikey': supabaseAnonKey,
-        },
-        body: {
-          phone,
-          code,
-          test_mode: whatsappAuth._testMode,
-          signup_mode: signupMode,
-        },
-      })
-
-      console.log('OTP verification response:', response)
-
-      // If successful, the response will contain a session
-      if (response.data?.success && response.data?.session) {
-        // In test mode, we skip setting the session since it's not a real session
-        if (!whatsappAuth._testMode) {
-          console.log('Setting real session in Supabase Auth')
-          // Set the session in Supabase Auth
-          const sessionResult = await supabase.auth.setSession({
-            access_token: response.data.session.access_token,
-            refresh_token: response.data.session.refresh_token,
-          })
-
-          console.log('Session set result:', sessionResult)
-
-          // Verify the session was set correctly
-          const currentSession = await supabase.auth.getSession()
-          console.log('Current session after setting:', currentSession)
-        } else {
-          console.log('Test mode: Not setting real session')
-        }
-
-        // Store first login status and plan info in sessionStorage
-        try {
-          if (response.data.is_first_login !== undefined) {
-            sessionStorage.setItem('is_first_login', response.data.is_first_login.toString())
-          }
-
-          if (response.data.is_new_user !== undefined) {
-            sessionStorage.setItem('is_new_user', response.data.is_new_user.toString())
-          }
-
-          if (response.data.plan_info) {
-            sessionStorage.setItem('plan_info', JSON.stringify(response.data.plan_info))
-          }
-          console.log('Stored auth data in sessionStorage:', {
-            is_first_login: response.data.is_first_login,
-            is_new_user: response.data.is_new_user,
-            plan_info: response.data.plan_info,
-          })
-        } catch (storageError) {
-          console.error('Error storing session data:', storageError)
-        }
-      } else if (response.error) {
-        console.error('Error in verification response:', response.error)
-        return { data: null, error: response.error }
-      }
-
-      return response
-    } catch (error) {
-      console.error('Error verifying OTP:', error)
-      throw error
-    }
-  },
-
-  // Verify OTP code using simplified function
+  /**
+   * Calls the Edge Function to verify the OTP and authenticate the user.
+   * @param {string} phone - The user's phone number.
+   * @param {string} code - The OTP code from the user.
+   * @param {boolean} skipVerification - Flag to bypass OTP check (for internal use).
+   * @param {boolean} signupMode - Flag to indicate if this is for a new user signup.
+   */
   verifySimplifiedOTP: async (phone: string, code: string, skipVerification = false, signupMode = false) => {
-    if (isFrontendOnly) {
-      console.log('Frontend-only mode: Simulating simplified OTP verification for', phone)
-      // Simulate successful verification
-      return {
-        data: {
-          success: true,
-          message: 'Demo mode: OTP verification successful',
-          user: { phone, id: 'demo-user-id' },
-          is_first_login: true,
-          is_new_user: signupMode,
-        },
-        error: null,
-      }
-    }
-
     try {
-      console.log('Verifying simplified OTP:', {
-        phone,
-        code,
-        testMode: whatsappAuth._testMode,
-        skipVerification,
-        signupMode,
-      })
+      console.log('Invoking simplified-whatsapp-auth-verify-otp function...')
 
-      const response = await supabase.functions.invoke('simplified-whatsapp-auth-verify-otp', {
-        // ✅ FIX: Add the headers object here
+      const { data, error } = await supabase.functions.invoke('simplified-whatsapp-auth-verify-otp', {
+        // ✅ FIX: The required 'apikey' header for authorization
         headers: {
           'apikey': supabaseAnonKey,
         },
@@ -248,32 +111,25 @@ export const whatsappAuth = {
         },
       })
 
-      console.log('Simplified OTP verification response:', response)
-
-      // If successful, the response will contain a session
-      if (response.error) {
-        console.error('Error in verification response:', response.error)
-        return { data: null, error: response.error }
+      if (error) {
+        console.error('Error in verification response from function:', error)
+        throw error
       }
 
-      return response
+      console.log('Simplified OTP verification response:', { data, error })
+      return { data, error }
     } catch (error) {
-      console.error('Error verifying simplified OTP:', error)
-      throw error
+      console.error('Critical error verifying simplified OTP:', error)
+      return { data: null, error }
     }
   },
 
-  // Sign out current user
+  /**
+   * Signs out the current user from the Supabase session.
+   */
   signOut: async () => {
     try {
-      // First try to remove local storage session
-      try {
-        localStorage.removeItem('supabase.auth.token')
-      } catch (e) {
-        console.error('Failed to remove local storage session:', e)
-      }
-
-      // Then try to sign out through Supabase
+      localStorage.removeItem('supabase.auth.token') // Proactively clear local session
       return await supabase.auth.signOut()
     } catch (error) {
       console.error('Error signing out:', error)
@@ -281,6 +137,23 @@ export const whatsappAuth = {
     }
   },
 
-  // Get current session
+  /**
+   * Retrieves the current session from Supabase.
+   */
   getSession: async () => {
-    return
+    return await supabase.auth.getSession()
+  },
+
+  /**
+   * Retrieves the current user data from Supabase.
+   */
+  getUser: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      return user
+    } catch (error) {
+      console.error('Error getting user:', error)
+      return null
+    }
+  },
+}
